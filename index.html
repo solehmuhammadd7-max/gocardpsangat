@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kepolisian Nexotis - Login</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="flag"><svg class="logo-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
+      <h1>KEPOLISIAN NEXOTIS</h1>
+      <p>Login akses ini hanya di akses oleh anggota saja, dan anggota bisa create nya di discord, terimakasih.</p>
+  
+      <div class="form-group" style="text-align:left">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="username kamu" autocomplete="username">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="password kamu" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="login-btn">Masuk</button>
+      <div class="error-msg" id="error-msg"></div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--faint);font-size:12px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>Click button dibawah ini untuk civil mendaftar account<div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <a class="btn" href="/api/auth-login?aksi=discord" style="display:block;box-sizing:border-box;width:100%;text-align:center;text-decoration:none;background:#5865F2;color:#fff">Login dengan Discord</a>
+      <div class="foot">© 2026 Kepolisian Nexotis</div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  // Kalau sesi masih aktif, langsung ke dashboard
+  (async () => {
+    try { await api("/api/me"); window.location.href = "dashboard.html"; return; }
+    catch (e) { /* bukan anggota */ }
+    try { await api("/api/auth-login?aksi=warga-me"); window.location.href = "warga.html"; }
+    catch (e) { /* belum login, tetap di sini */ }
+  })();
+
+  // Pesan error dari alur login Discord (?err=...)
+  const errQuery = new URLSearchParams(location.search).get("err");
+  if (errQuery) document.getElementById("error-msg").textContent = errQuery;
+
+  document.getElementById("login-btn").addEventListener("click", doLogin);
+  document.getElementById("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+
+  async function doLogin() {
+    const errorEl = document.getElementById("error-msg");
+    errorEl.textContent = "";
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    if (!username || !password) { errorEl.textContent = "Username & password wajib diisi."; return; }
+
+    const btn = document.getElementById("login-btn");
+    btn.disabled = true; btn.textContent = "Memeriksa...";
+    try {
+      await api("/api/auth-login", { method: "POST", body: JSON.stringify({ username, password }) });
+      window.location.href = "dashboard.html";
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Masuk";
+    }
+  }
+</script>
+</body>
+</html>

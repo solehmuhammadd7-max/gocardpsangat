@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Kepolisian Nexotis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="navbar-mount"></div>
+
+  <div class="container">
+    <div class="card">
+      <h2 id="greeting">Memuat...</h2>
+      <div class="sub" id="rank-div">Pangkat | Divisi</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card hours">
+        <div class="label">Total Akumulasi Jam Kerja</div>
+        <div class="value" id="stat-jam">0.00 Jam</div>
+        <div class="sub" id="periode-label" style="font-size:12px;opacity:.75;margin-top:4px"></div>
+      </div>
+    </div>
+
+    <div class="pill-row">
+      <div class="pill hadir"><div class="num" id="pill-hadir">0</div><div class="lbl">Hadir</div></div>
+      <div class="pill izin"><div class="num" id="pill-izin">0</div><div class="lbl">Izin</div></div>
+      <div class="pill cuti"><div class="num" id="pill-cuti">0</div><div class="lbl">Cuti</div></div>
+      <div class="pill alpa"><div class="num" id="pill-alpa">0</div><div class="lbl">Alpa</div></div>
+    </div>
+
+    <div class="card" id="leaderboard-card" style="display:none">
+      <h2>🏆 Leaderboard Jam Duty</h2>
+      <div class="sub" id="leaderboard-sub">Top 5 anggota paling rajin duty periode ini.</div>
+      <div id="leaderboard-list"></div>
+    </div>
+
+    <div class="card" id="promosi-card">
+      <h2>⭐ Target Kenaikan Pangkat</h2>
+      <div class="sub" id="promosi-sub">Memuat...</div>
+
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span>Arrest Record minggu ini</span>
+          <span id="promosi-arrest-label">0/5</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="promosi-arrest-bar" style="width:0%"></div></div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+          <span>Jam Duty Bulanan</span>
+          <span id="promosi-jam-label">0/30 jam</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="promosi-jam-bar" style="width:0%"></div></div>
+      </div>
+
+      <div id="promosi-status" style="font-size:12px;margin-bottom:10px"></div>
+      <div class="error-msg" id="promosi-error"></div>
+      <button class="btn btn-primary" id="promosi-ajukan-btn">Ajukan Kenaikan Pangkat</button>
+    </div>
+
+    <div class="card">
+      <h2>📋 Riwayat Absensi Minggu Ini</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Tanggal</th><th>Tipe</th><th>Waktu Duty</th><th>Status</th><th>Keterangan</th><th>Bukti</th></tr>
+          </thead>
+          <tbody id="riwayat-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kirim Laporan Resmi</h2>
+      <div class="sub">Laporan akan berstatus "pending" sampai diverifikasi High Command.</div>
+
+      <div class="form-group">
+        <label>Status Kehadiran</label>
+        <div class="radio-group" id="tipe-group">
+          <label class="radio-option selected" data-tipe="hadir"><input type="radio" name="tipe" value="hadir" checked> HADIR (ON DUTY)</label>
+          <label class="radio-option" data-tipe="izin"><input type="radio" name="tipe" value="izin"> IZIN (HALANGAN)</label>
+          <label class="radio-option" data-tipe="cuti"><input type="radio" name="tipe" value="cuti"> CUTI (RENTANG WAKTU)</label>
+        </div>
+      </div>
+
+      <div class="form-group" id="field-tanggal">
+        <label for="tanggal">Tanggal</label>
+        <input type="date" id="tanggal">
+      </div>
+
+      <div class="form-group form-row" id="field-cuti" style="display:none">
+        <div><label for="cuti-mulai">Periode cuti mulai</label><input type="date" id="cuti-mulai"></div>
+        <div><label for="cuti-selesai">Periode cuti berakhir</label><input type="date" id="cuti-selesai"></div>
+      </div>
+
+      <div class="form-group form-row" id="field-duty">
+        <div><label for="waktu-mulai">Waktu duty mulai</label><input type="time" id="waktu-mulai" value="08:00"></div>
+        <div><label for="waktu-selesai">Waktu duty selesai</label><input type="time" id="waktu-selesai" value="16:00"></div>
+      </div>
+
+      <div class="form-group" id="field-foto">
+        <label>Bukti foto (screenshot in-game) *1–3 foto, wajib untuk hadir</label>
+        <div id="dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s ease,background .2s ease;">
+          <div style="font-size:24px;margin-bottom:6px">📷</div>
+          <div style="font-size:12px;color:var(--muted)">Tarik &amp; lepas foto di sini, atau klik untuk pilih (maks. 3)</div>
+          <input type="file" id="foto" accept="image/*" multiple style="display:none">
+        </div>
+        <div id="foto-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="keterangan">Kegiatan / alasan</label>
+        <textarea id="keterangan" placeholder="masukan deskripsinya"></textarea>
+      </div>
+
+      <div class="error-msg" id="form-error"></div>
+      <button class="btn btn-primary" id="submit-btn">Kirim Laporan Resmi</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="iklan-modal">
+    <div class="modal-box" style="max-width:420px;text-align:left">
+      <div id="iklan-modal-content"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+        <div id="iklan-modal-nav" style="font-size:12px;color:var(--faint)"></div>
+        <button class="btn btn-secondary" id="iklan-modal-close">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="foto-modal">
+    <div class="modal-box">
+      <div id="modal-zoom-wrap" style="display:none;text-align:center"></div>
+      <div id="modal-img-list" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px"></div>
+      <button class="btn btn-secondary" id="modal-close">Tutup</button>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  let user, myRecords = [], periodeMulai = null;
+
+  (async function init() {
+    user = await requireAuth();
+    if (!user) return;
+    renderNavbar("dashboard", user);
+    document.getElementById("greeting").textContent = `Halo, ${user.username}`;
+    document.getElementById("rank-div").textContent = user.pangkat;
+    document.getElementById("tanggal").value = toISO(new Date());
+    await refreshAll();
+    await refreshLeaderboard(); // muncul tiap dashboard pertama kali dibuka / di-refresh
+    await refreshIklan(); // popup iklan — muncul sekali tiap load/refresh, bukan berulang
+  })();
+
+  // ====== Popup Iklan (High Command kelola dari Panel Rekap → tab "Iklan") ======
+  // Ke-fetch & ke-tampilin SEKALI tiap dashboard pertama kali dibuka / di-refresh
+  // (bukan interval berulang) — jadi nggak nyepam, tapi tetap keliatan tiap
+  // anggota masuk/refresh halaman.
+  let iklanList = [];
+  let iklanIndex = 0;
+
+  async function refreshIklan() {
+    try {
+      const data = await api("/api/me?view=iklan");
+      iklanList = data.iklan || [];
+      if (!iklanList.length) return;
+      iklanIndex = 0;
+      renderIklanModal();
+      document.getElementById("iklan-modal").classList.add("open");
+    } catch (e) {
+      // Diam-diam gagal — iklan bukan fitur kritikal, jangan ganggu dashboard utama.
+    }
+  }
+
+  function renderIklanModal() {
+    const iklan = iklanList[iklanIndex];
+    document.getElementById("iklan-modal-content").innerHTML = `
+      ${iklan.foto ? `<img src="${iklan.foto}" style="width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-bottom:12px">` : ""}
+      ${iklan.teks ? `<div style="font-size:13px;white-space:pre-wrap">${iklan.teks}</div>` : ""}
+    `;
+    const navEl = document.getElementById("iklan-modal-nav");
+    if (iklanList.length > 1) {
+      navEl.innerHTML = `
+        <button class="btn-link" id="iklan-prev" ${iklanIndex === 0 ? "disabled" : ""}>‹ Sebelumnya</button>
+        <span style="margin:0 6px">${iklanIndex + 1}/${iklanList.length}</span>
+        <button class="btn-link" id="iklan-next" ${iklanIndex === iklanList.length - 1 ? "disabled" : ""}>Berikutnya ›</button>`;
+      document.getElementById("iklan-prev").addEventListener("click", () => { if (iklanIndex > 0) { iklanIndex--; renderIklanModal(); } });
+      document.getElementById("iklan-next").addEventListener("click", () => { if (iklanIndex < iklanList.length - 1) { iklanIndex++; renderIklanModal(); } });
+    } else {
+      navEl.innerHTML = "";
+    }
+  }
+
+  document.getElementById("iklan-modal-close").addEventListener("click", () => {
+    document.getElementById("iklan-modal").classList.remove("open");
+  });
+
+  async function refreshAll() {
+    const data = await api("/api/absensi");
+    myRecords = data.absensi;
+    periodeMulai = data.periodeMulai;
+    refreshStats();
+    refreshRiwayat();
+    await refreshPromosi();
+  }
+
+  function refreshStats() {
+    const mulai = effectiveMulai(periodeMulai, user.bergabung);
+    const s = calcStatsFromRecords(myRecords, mulai);
+    document.getElementById("stat-jam").textContent = s.totalJam.toFixed(2) + " Jam";
+    const periodeLabel = document.getElementById("periode-label");
+    if (periodeLabel) periodeLabel.textContent = `Sejak ${formatTanggal(mulai)} (reset manual oleh High Command)`;
+    document.getElementById("pill-hadir").textContent = s.hadir;
+    document.getElementById("pill-izin").textContent = s.izin;
+    document.getElementById("pill-cuti").textContent = s.cuti;
+    document.getElementById("pill-alpa").textContent = s.alpa;
+  }
+
+  const MEDALI = ["🥇", "🥈", "🥉"];
+  async function refreshLeaderboard() {
+    try {
+      const data = await api("/api/me?view=leaderboard");
+      const rows = data.leaderboard || [];
+      const card = document.getElementById("leaderboard-card");
+      const list = document.getElementById("leaderboard-list");
+      if (!rows.length) { card.style.display = "none"; return; }
+      card.style.display = "block";
+      list.innerHTML = rows.map((r, i) => `
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 0;${i < rows.length - 1 ? "border-bottom:1px solid var(--border)" : ""}">
+          <div style="width:26px;text-align:center;font-size:15px;flex-shrink:0">${MEDALI[i] || (i + 1)}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.namaKarakter || r.username}${r.id === user.id ? " (Kamu)" : ""}</div>
+            <div style="font-size:10px;color:var(--faint)">${r.pangkat}</div>
+          </div>
+          <div style="flex-shrink:0;text-align:center;min-width:52px">
+            ${r.rank > 0
+              ? `<div style="display:inline-block;padding:3px 8px;border-radius:999px;background:var(--blue);color:#fff;font-size:10px;font-weight:800">RANK ${r.rank}</div>`
+              : `<div style="display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid var(--border);color:var(--faint);font-size:10px;font-weight:700">—</div>`}
+            <div style="font-size:9px;color:var(--faint);margin-top:2px">${r.jamMingguIni}/${r.rankTargetBerikut} jam</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:13px;font-weight:700;color:var(--blue)">${r.totalJam.toFixed(1)} Jam</div>
+            <div style="font-size:10px;color:var(--faint)">${r.hadir}x hadir</div>
+          </div>
+        </div>`).join("");
+
+      const info = data.rankInfo;
+      const subEl = document.getElementById("leaderboard-sub");
+      if (info && subEl) {
+        subEl.textContent = `Top 5 anggota paling rajin duty periode ini. Rank 1 = ${info.jamRankPertama} jam dalam satu minggu, rank 2 = ${info.jamRankPertama + info.tambahanPerRank} jam, dan seterusnya (+${info.tambahanPerRank} jam tiap naik rank). Rank reset otomatis tiap ganti bulan.`;
+      }
+    } catch (e) {
+      // Diam-diam gagal — leaderboard bukan fitur kritikal, jangan ganggu dashboard utama.
+      document.getElementById("leaderboard-card").style.display = "none";
+    }
+  }
+
+  function refreshRiwayat() {
+    const week = getWeekDates();
+    const rows = myRecords
+      .filter((a) => week.includes(a.tanggal) || (a.tipe === "cuti" && eachDateInRange(a.cutiMulai, a.cutiSelesai).some((d) => week.includes(d))))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const tbody = document.getElementById("riwayat-body");
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty">Belum ada laporan minggu ini.</td></tr>`; return; }
+    tbody.innerHTML = rows.map((a) => {
+      const waktu = a.tipe === "hadir" ? `${a.waktuMulai || "-"} - ${a.waktuSelesai || "-"}`
+        : a.tipe === "cuti" ? `${formatTanggal(a.cutiMulai)} s/d ${formatTanggal(a.cutiSelesai)}` : "-";
+      const foto = (Array.isArray(a.foto) && a.foto.length) ? `<button class="btn-link" onclick="showFoto('${a.id}')">Lihat (${a.foto.length})</button>` : "-";
+      return `<tr>
+        <td>${formatTanggal(a.tanggal)}</td>
+        <td style="text-transform:capitalize">${a.tipe}</td>
+        <td>${waktu}</td>
+        <td><span class="badge ${a.status}">${a.status}</span>${a.status === "ditolak" && a.alasan ? `<div style="font-size:10px;color:var(--faint);margin-top:3px">${a.alasan}</div>` : ""}</td>
+        <td>${a.keterangan || "-"}</td>
+        <td>${foto}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  let currentFotoList = [];
+  function showFoto(id) {
+    const rec = myRecords.find((a) => a.id === id);
+    if (!rec || !Array.isArray(rec.foto) || !rec.foto.length) return;
+    currentFotoList = rec.foto;
+    renderFotoGallery();
+    document.getElementById("foto-modal").classList.add("open");
+  }
+  function renderFotoGallery() {
+    document.getElementById("modal-zoom-wrap").style.display = "none";
+    const listEl = document.getElementById("modal-img-list");
+    listEl.style.display = "flex";
+    listEl.innerHTML = currentFotoList.map((src, i) =>
+      `<img src="${src}" onclick="zoomFoto(${i})" style="max-width:120px;border-radius:8px;border:1px solid var(--border);cursor:zoom-in">`
+    ).join("");
+  }
+  function zoomFoto(i) {
+    document.getElementById("modal-img-list").style.display = "none";
+    const wrap = document.getElementById("modal-zoom-wrap");
+    wrap.style.display = "block";
+    wrap.innerHTML = `
+      <img src="${currentFotoList[i]}" style="max-width:100%;max-height:65vh;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;cursor:zoom-out" onclick="renderFotoGallery()">
+      <div style="margin-bottom:10px"><button class="btn btn-secondary" onclick="renderFotoGallery()">🔍 Zoom Out</button></div>`;
+  }
+  document.getElementById("modal-close").addEventListener("click", () => document.getElementById("foto-modal").classList.remove("open"));
+
+  // ====== Target Kenaikan Pangkat (5x Arrest Record + 30 jam duty per minggu) ======
+  let promosiInfo = null;
+
+  async function refreshPromosi() {
+    try {
+      const data = await api("/api/me");
+      promosiInfo = data.user.promosi;
+      renderPromosi();
+    } catch (e) {
+      // Diam-diam gagal — jangan ganggu dashboard utama.
+    }
+  }
+
+  function renderPromosi() {
+    const card = document.getElementById("promosi-card");
+    const subEl = document.getElementById("promosi-sub");
+    const statusEl = document.getElementById("promosi-status");
+    const btn = document.getElementById("promosi-ajukan-btn");
+    document.getElementById("promosi-error").textContent = "";
+
+    if (!promosiInfo) { card.style.display = "none"; return; }
+    card.style.display = "block";
+
+    // Sudah di pangkat tertinggi -> nggak ada target lagi.
+    if (!promosiInfo.pangkatTarget) {
+      subEl.textContent = "Kamu sudah berada di pangkat tertinggi.";
+      document.getElementById("promosi-arrest-label").textContent = `${promosiInfo.arrestMingguIni}/${promosiInfo.targetArrest}`;
+      document.getElementById("promosi-jam-label").textContent = `${promosiInfo.jamMingguIni}/${promosiInfo.targetJam} jam`;
+      document.getElementById("promosi-arrest-bar").style.width = "100%";
+      document.getElementById("promosi-jam-bar").style.width = "100%";
+      statusEl.innerHTML = "";
+      btn.style.display = "none";
+      return;
+    }
+
+    subEl.textContent = `Menuju pangkat ${promosiInfo.pangkatTarget}. Kalian wajib menyelesaikan target mission dari HC..`;
+
+    const arrestPct = Math.min(100, Math.round((promosiInfo.arrestMingguIni / promosiInfo.targetArrest) * 100));
+    const jamPct = Math.min(100, Math.round((promosiInfo.jamMingguIni / promosiInfo.targetJam) * 100));
+    document.getElementById("promosi-arrest-label").textContent = `${promosiInfo.arrestMingguIni}/${promosiInfo.targetArrest}`;
+    document.getElementById("promosi-jam-label").textContent = `${promosiInfo.jamMingguIni}/${promosiInfo.targetJam} jam`;
+    const arrestBar = document.getElementById("promosi-arrest-bar");
+    const jamBar = document.getElementById("promosi-jam-bar");
+    arrestBar.style.width = arrestPct + "%";
+    arrestBar.className = "progress-fill" + (arrestPct >= 100 ? " done" : "");
+    jamBar.style.width = jamPct + "%";
+    jamBar.className = "progress-fill" + (jamPct >= 100 ? " done" : "");
+
+    btn.style.display = "inline-block";
+    const pengajuan = promosiInfo.pengajuanMingguIni;
+
+    if (pengajuan && pengajuan.status === "pending") {
+      statusEl.innerHTML = `<span class="badge pending">⏳ Menunggu persetujuan High Command</span> untuk naik ke <strong>${pengajuan.pangkatTarget}</strong>.`;
+      btn.disabled = true;
+      btn.textContent = "Menunggu Persetujuan...";
+    } else if (pengajuan && pengajuan.status === "diterima") {
+      statusEl.innerHTML = `<span class="badge diterima">✅ Sudah naik pangkat minggu ini</span>, ke <strong>${pengajuan.pangkatTarget}</strong>.`;
+      btn.disabled = true;
+      btn.textContent = "Sudah Naik Pangkat";
+    } else {
+      if (pengajuan && pengajuan.status === "ditolak") {
+        statusEl.innerHTML = `<span class="badge ditolak">❌ Pengajuan sebelumnya ditolak</span>${pengajuan.alasan ? `<div style="font-size:11px;color:var(--faint);margin-top:3px">Alasan: ${pengajuan.alasan}</div>` : ""}`;
+      } else {
+        statusEl.innerHTML = "";
+      }
+      btn.disabled = !promosiInfo.eligible;
+      btn.textContent = promosiInfo.eligible ? "Ajukan Kenaikan Pangkat" : "Target Belum Terpenuhi";
+    }
+  }
+
+  document.getElementById("promosi-ajukan-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("promosi-ajukan-btn");
+    const errorEl = document.getElementById("promosi-error");
+    errorEl.textContent = "";
+    btn.disabled = true; btn.textContent = "Mengirim...";
+    try {
+      await api("/api/me", { method: "POST", body: JSON.stringify({ ajukanPromosi: true }) });
+      await refreshPromosi();
+    } catch (e) {
+      errorEl.textContent = e.message;
+      renderPromosi();
+    }
+  });
+
+  document.querySelectorAll("#tipe-group .radio-option").forEach((label) => {
+    label.addEventListener("click", () => {
+      document.querySelectorAll("#tipe-group .radio-option").forEach((l) => l.classList.remove("selected"));
+      label.classList.add("selected");
+      label.querySelector("input").checked = true;
+      const tipe = label.dataset.tipe;
+      document.getElementById("field-cuti").style.display = tipe === "cuti" ? "flex" : "none";
+      document.getElementById("field-duty").style.display = tipe === "hadir" ? "flex" : "none";
+      document.getElementById("field-tanggal").style.display = tipe === "cuti" ? "none" : "block";
+      document.getElementById("field-foto").style.display = tipe === "hadir" ? "block" : "none";
+      if (tipe !== "hadir") { fotoList = []; renderFotoPreview(); }
+    });
+  });
+
+  const MAX_FOTO = 3;
+  let fotoList = [];
+
+  function renderFotoPreview() {
+    const previewEl = document.getElementById("foto-preview");
+    previewEl.innerHTML = fotoList.map((src, i) => `
+      <div style="position:relative">
+        <img src="${src}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+        <button type="button" onclick="removeFoto(${i})" style="position:absolute;top:-6px;right:-6px;background:#b91c1c;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1;">×</button>
+      </div>`).join("");
+  }
+
+  function removeFoto(i) {
+    fotoList.splice(i, 1);
+    renderFotoPreview();
+  }
+
+  // Foto discreenshot in-game biasanya beberapa MB per file — kalau dikirim mentah
+  // sebagai base64 (apalagi sampai 3 foto sekaligus), gampang kena 413 Payload Too
+  // Large di server. Makanya di-resize & dikompres dulu jadi JPEG di browser sebelum
+  // diubah ke data URL, supaya ukurannya jauh lebih kecil tapi tetap jelas dibaca.
+  function compressImage(file, maxDim = 1280, quality = 0.72) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+          else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Gagal memuat foto.")); };
+      img.src = objectUrl;
+    });
+  }
+
+  // Kalau data URL hasil kompresi masih gede banget (foto sangat kompleks / resolusi
+  // ekstrem), kompres ulang dengan kualitas lebih rendah supaya tetap aman dikirim.
+  async function compressUntilSmallEnough(file, maxBytes = 900 * 1024) {
+    let quality = 0.72;
+    let dataUrl = await compressImage(file, 1280, quality);
+    while (dataUrl.length * 0.75 > maxBytes && quality > 0.35) {
+      quality -= 0.12;
+      dataUrl = await compressImage(file, 1280, quality);
+    }
+    return dataUrl;
+  }
+
+  async function addFiles(fileList) {
+    const errorEl = document.getElementById("form-error");
+    errorEl.textContent = "";
+    const files = Array.from(fileList || []).filter((f) => f.type.startsWith("image/"));
+    for (const file of files) {
+      if (fotoList.length >= MAX_FOTO) {
+        errorEl.textContent = `Maksimal ${MAX_FOTO} foto.`;
+        break;
+      }
+      try {
+        const dataUrl = await compressUntilSmallEnough(file);
+        fotoList.push(dataUrl);
+      } catch (e) {
+        errorEl.textContent = `Gagal memproses foto "${file.name}": ${e.message}`;
+      }
+    }
+    renderFotoPreview();
+  }
+
+  const dropzone = document.getElementById("dropzone");
+  const fotoInput = document.getElementById("foto");
+  dropzone.addEventListener("click", () => fotoInput.click());
+  fotoInput.addEventListener("change", (e) => { addFiles(e.target.files); fotoInput.value = ""; });
+
+  ["dragenter", "dragover"].forEach((evt) => dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = "var(--red)";
+    dropzone.style.background = "rgba(190, 24, 93, 0.08)";
+  }));
+  ["dragleave", "drop"].forEach((evt) => dropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    dropzone.style.borderColor = "var(--border)";
+    dropzone.style.background = "transparent";
+  }));
+  dropzone.addEventListener("drop", (e) => { addFiles(e.dataTransfer.files); });
+
+  document.getElementById("submit-btn").addEventListener("click", async () => {
+    const tipe = document.querySelector('input[name="tipe"]:checked').value;
+    const errorEl = document.getElementById("form-error");
+    errorEl.textContent = "";
+
+    if (tipe === "hadir" && fotoList.length < 1) { errorEl.textContent = "Minimal 1 foto bukti wajib untuk laporan hadir."; return; }
+    if (tipe === "cuti" && (!document.getElementById("cuti-mulai").value || !document.getElementById("cuti-selesai").value)) {
+      errorEl.textContent = "Periode cuti wajib diisi."; return;
+    }
+
+    const btn = document.getElementById("submit-btn");
+    btn.disabled = true; btn.textContent = "Mengirim...";
+    try {
+      await api("/api/absensi", { method: "POST", body: JSON.stringify({
+        tipe,
+        tanggal: document.getElementById("tanggal").value,
+        waktuMulai: tipe === "hadir" ? document.getElementById("waktu-mulai").value : null,
+        waktuSelesai: tipe === "hadir" ? document.getElementById("waktu-selesai").value : null,
+        cutiMulai: tipe === "cuti" ? document.getElementById("cuti-mulai").value : null,
+        cutiSelesai: tipe === "cuti" ? document.getElementById("cuti-selesai").value : null,
+        foto: fotoList,
+        keterangan: document.getElementById("keterangan").value,
+      })});
+      document.getElementById("keterangan").value = "";
+      document.getElementById("foto").value = "";
+      fotoList = [];
+      renderFotoPreview();
+      await refreshAll();
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Kirim Laporan Resmi";
+    }
+  });
+</script>
+</body>
+</html>

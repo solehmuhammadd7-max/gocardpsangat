@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arrest Record - Kepolisian Nexotis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="navbar-mount"></div>
+
+  <div class="container">
+    <div class="card">
+      <h2>🚔 Buat Arrest Record Baru</h2>
+      <div class="sub">Semua anggota bisa bikin berkas. Edit &amp; hapus cuma bisa dilakukan High Command.</div>
+
+      <h3 style="font-size:13px;color:var(--red);margin:16px 0 8px">Informasi Petugas</h3>
+      <div class="form-group">
+        <label for="f-nama-petugas">Nama</label>
+        <input type="text" id="f-nama-petugas" placeholder="Nama karakter petugas">
+      </div>
+      <div class="form-group">
+        <label for="f-umur-petugas">Umur</label>
+        <input type="number" id="f-umur-petugas" placeholder="Umur petugas" min="0">
+      </div>
+      <div class="form-group">
+        <label for="f-divisi-petugas">Divisi</label>
+        <input type="text" id="f-divisi-petugas" placeholder="Misal: Reskrim, Lantas, Brimob">
+      </div>
+      <div class="form-group">
+        <label>Pangkat</label>
+        <input type="text" id="f-pangkat-petugas" disabled>
+      </div>
+
+      <h3 style="font-size:13px;color:var(--red);margin:16px 0 8px">Informasi Tersangka</h3>
+      <div class="form-group">
+        <label for="f-nama-tersangka">Nama</label>
+        <input type="text" id="f-nama-tersangka" placeholder="Nama karakter tersangka">
+      </div>
+      <div class="form-group">
+        <label for="f-umur-tersangka">Umur</label>
+        <input type="number" id="f-umur-tersangka" placeholder="Umur tersangka" min="0">
+      </div>
+      <div class="form-group">
+        <label for="f-ciri-tersangka">Ciri-Ciri Tersangka</label>
+        <textarea id="f-ciri-tersangka" rows="2" placeholder="Tinggi badan, warna baju, tato, dsb"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="f-lokasi">Lokasi Penangkapan</label>
+        <input type="text" id="f-lokasi" placeholder="Misal: Depan Bank Nexotis, Sandy Shores">
+      </div>
+
+      <h3 style="font-size:13px;color:var(--red);margin:16px 0 8px">Kronologi &amp; Pasal</h3>
+      <div class="form-group">
+        <label for="f-kronologi">Kronologi Secara Singkat</label>
+        <textarea id="f-kronologi" rows="4" placeholder="Ceritakan kronologi kejadian secara singkat & jelas"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Pasal yang Dikenakan</label>
+        <div class="filter-pills" id="pasalFilterBar">
+          <button type="button" class="filter-btn active" data-cat="0"><span class="swatch"></span>Semua</button>
+          <button type="button" class="filter-btn" data-cat="1"><span class="swatch"></span>Pasal A</button>
+          <button type="button" class="filter-btn" data-cat="2"><span class="swatch"></span>Pasal B</button>
+          <button type="button" class="filter-btn" data-cat="3"><span class="swatch"></span>Pasal C</button>
+          <button type="button" class="filter-btn" data-cat="4"><span class="swatch"></span>Pasal D</button>
+          <button type="button" class="filter-btn" data-cat="5"><span class="swatch"></span>Pasal E</button>
+          <button type="button" class="filter-btn" data-cat="6"><span class="swatch"></span>Pasal F</button>
+          <button type="button" class="filter-btn" data-cat="7"><span class="swatch"></span>Pasal G</button>
+          <button type="button" class="filter-btn" data-cat="8"><span class="swatch"></span>Pasal H</button>
+        </div>
+        <div id="pasal-picker" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:10px"></div>
+      </div>
+
+      <div class="kalkulator-summary">
+        <div class="stat-card money"><div class="label">Total Denda</div><div class="value" id="f-total-denda">$0</div></div>
+      </div>
+
+      <h3 style="font-size:13px;color:var(--red);margin:16px 0 8px">Foto KTP Tersangka</h3>
+      <div class="form-group">
+        <div id="ktp-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;">
+          <div style="font-size:24px;margin-bottom:6px">🪪</div>
+          <div style="font-size:12px;color:var(--muted)">Klik untuk pilih atau CTRL+V buat paste foto KTP (maks. 2)</div>
+          <input type="file" id="ktp-input" accept="image/*" multiple style="display:none">
+        </div>
+        <div id="ktp-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
+      </div>
+
+      <div id="form-error" style="color:#ef4444;font-size:12px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-secondary" id="form-batal">Reset</button>
+        <button class="btn btn-primary" id="form-submit">Arsipkan Berkas</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📋 Daftar Arrest Record</h2>
+      <div class="form-group">
+        <input type="text" id="arrest-search" placeholder="Cari nama tersangka atau petugas...">
+      </div>
+      <div style="overflow-x:auto">
+        <table class="pasal-table">
+          <thead><tr><th>Tanggal</th><th>Tersangka</th><th>Petugas</th><th>Denda</th><th></th></tr></thead>
+          <tbody id="arrest-body"><tr><td colspan="5" class="empty">Memuat...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:50;align-items:center;justify-content:center;padding:16px">
+    <div class="card" style="max-width:560px;width:100%;max-height:85vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h2 style="margin:0">Detail Arrest Record</h2>
+        <button class="btn btn-secondary" id="detail-close" style="padding:5px 10px">×</button>
+      </div>
+      <div id="detail-body" style="margin-top:12px;font-size:13px;line-height:1.7"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    const PASAL_DATA = [
+  // --- PASAL A - LALU LINTAS ---
+  { kategori: 1, kode: "A01", pelanggaran: "Berkendara tidak memiliki SIM", denda: 10000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A02", pelanggaran: "Berkendara Secara Ugal-Ugalan", denda: 12000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A03", pelanggaran: "Parkir Sembarangan", denda: 15000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A04", pelanggaran: "Kendaraan tidak memiliki plat nomor", denda: 13500, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A05", pelanggaran: "Kabur dari Kecelakaan", denda: 18000, hukuman: "5 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A06", pelanggaran: "Kecelakaan hingga menimbulkan korban jiwa", denda: 50000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 2" },
+  { kategori: 1, kode: "A07", pelanggaran: "Mengemudi Melawan Arus", denda: 14000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 0" },
+  { kategori: 1, kode: "A08", pelanggaran: "Mengangkut Penumpang Lebih dari Kapasitas", denda: 20000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 0" },
+  { kategori: 1, kode: "A09", pelanggaran: "Menghindar saat diberhentikan petugas", denda: 17000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A10", pelanggaran: "Menabrak Rambu Lalu Lintass", denda: 12000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 0" },
+  { kategori: 1, kode: "A11", pelanggaran: "Modifikasi Ilegal (Nitro & Knalpot Api)", denda: 14500, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A12", pelanggaran: "Balap Liar", denda: 45000, hukuman: "15 Bulan", deskripsi: "Penyitaan kendaraan: 2" },
+  { kategori: 1, kode: "A13", pelanggaran: "Menerobos barikade kepolisian", denda: 25000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A14", pelanggaran: "Mengemudi dalam keadaan mabuk", denda: 26500, hukuman: "5 Bulan", deskripsi: "Penyitaan kendaraan: 2" },
+  { kategori: 1, kode: "A15", pelanggaran: "Mengemudi dengan kecepatan berlebihan", denda: 10500, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+  { kategori: 1, kode: "A16", pelanggaran: "Tidak memberikan prioritas pejalan kaki", denda: 22000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 0" },
+  { kategori: 1, kode: "A17", pelanggaran: "Menggunakan ponsel saat mengemudi", denda: 15000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 0" },
+  { kategori: 1, kode: "A18", pelanggaran: "Tidak menggunakan sabuk pengaman", denda: 15000, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 0" },
+  { kategori: 1, kode: "A19", pelanggaran: "Melanggar lampu lalu lintas", denda: 10500, hukuman: "0 Bulan", deskripsi: "Penyitaan kendaraan: 1" },
+
+  // --- PASAL B - PELANGGARAN UMUM ---
+  { kategori: 2, kode: "B01", pelanggaran: "Kekerasan Ringan", denda: 25000, hukuman: "10 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B02", pelanggaran: "Meludah Sembarangan", denda: 10500, hukuman: "5 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B03", pelanggaran: "Buang air sembarangan", denda: 11000, hukuman: "5 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B04", pelanggaran: "Mengganggu / menipu petugas", denda: 16000, hukuman: "8 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B05", pelanggaran: "Menyebarkan ujaran buruk", denda: 30000, hukuman: "12 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B06", pelanggaran: "Berkelahi ditempat umum", denda: 17500, hukuman: "15 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B07", pelanggaran: "Gangguan Ketertiban Umum", denda: 19000, hukuman: "10 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B08", pelanggaran: "Pencurian", denda: 30000, hukuman: "18 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B09", pelanggaran: "Vandalisme", denda: 25000, hukuman: "13 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B10", pelanggaran: "Atribut instansi secara ilegal", denda: 17500, hukuman: "8 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B11", pelanggaran: "Menyamar sebagai petugas", denda: 18000, hukuman: "10 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B12", pelanggaran: "Percobaan suap terhadap petugas", denda: 18500, hukuman: "12 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B13", pelanggaran: "Laporan/informasi palsu", denda: 15000, hukuman: "12 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B14", pelanggaran: "Memiliki hewan dilindungi", denda: 55000, hukuman: "13 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B15", pelanggaran: "Memperjualbelikan hewan dilindungi", denda: 70000, hukuman: "15 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B16", pelanggaran: "Mengumpulkan massa kekacauan", denda: 95000, hukuman: "25 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B17", pelanggaran: "Ikut dalam kerusuhan", denda: 100000, hukuman: "20 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B18", pelanggaran: "Menolak membubarkan diri", denda: 20000, hukuman: "8 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B19", pelanggaran: "Penghakiman sepihak", denda: 85000, hukuman: "20 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B20", pelanggaran: "Berburu tanpa lisensi", denda: 65000, hukuman: "15 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B21", pelanggaran: "Melanggar jam malam", denda: 11000, hukuman: "5 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B22", pelanggaran: "Ganggu ketenteraman (suara keras)", denda: 11500, hukuman: "8 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B23", pelanggaran: "Menghina simbol negara/instansi", denda: 75000, hukuman: "15 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B24", pelanggaran: "Menolak perintah sah petugas", denda: 85000, hukuman: "10 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B25", pelanggaran: "Tindakan asusila di tempat umum", denda: 95000, hukuman: "12 Bulan", deskripsi: "Pelanggaran Umum" },
+  { kategori: 2, kode: "B26", pelanggaran: "Mencoba melarikan diri", denda: 19500, hukuman: "10 Bulan", deskripsi: "Pelanggaran Umum" },
+
+  // --- PASAL C - KEJAHATAN PROPERTI ---
+  { kategori: 3, kode: "C01", pelanggaran: "Memasuki properti pribadi tanpa izin", denda: 13000, hukuman: "0 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C02", pelanggaran: "Memasuki properti pemerintah tanpa izin", denda: 15000, hukuman: "0 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C03", pelanggaran: "Merusak properti pribadi/pemerintah", denda: 35000, hukuman: "0 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C04", pelanggaran: "Membakar properti", denda: 32000, hukuman: "25 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C05", pelanggaran: "Distribusi barang ilegal di properti", denda: 39000, hukuman: "0 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C06", pelanggaran: "Membobol properti (niat mencuri)", denda: 40000, hukuman: "23 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C07", pelanggaran: "Graffiti tanpa izin", denda: 33000, hukuman: "8 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C08", pelanggaran: "Poster/spanduk tanpa izin", denda: 29000, hukuman: "5 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C09", pelanggaran: "Mengganggu properti bersama", denda: 27000, hukuman: "12 Bulan", deskripsi: "Kejahatan Properti" },
+  { kategori: 3, kode: "C10", pelanggaran: "Mengubah fungsi properti tanpa izin", denda: 50000, hukuman: "0 Bulan", deskripsi: "Kejahatan Properti" },
+
+  // --- PASAL D - NARKOTIKA ---
+  { kategori: 4, kode: "D01", pelanggaran: "Berada ditempat narkotika", denda: 20000, hukuman: "15 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D02", pelanggaran: "Pembuatan narkotika", denda: 70000, hukuman: "20 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D03", pelanggaran: "Menjual/distribusi narkotika", denda: 80000, hukuman: "30 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D04-1", pelanggaran: "Kanabis [1-10 pcs]", denda: 10000, hukuman: "15 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D04-2", pelanggaran: "Kanabis [11-25 pcs]", denda: 15000, hukuman: "16 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D04-3", pelanggaran: "Kanabis [>25 pcs]", denda: 25000, hukuman: "20 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D05-1", pelanggaran: "Marijuana [1-5 pcs]", denda: 30000, hukuman: "25 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D05-2", pelanggaran: "Marijuana [6-10 pcs]", denda: 35000, hukuman: "30 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D05-3", pelanggaran: "Marijuana [>10 pcs]", denda: 40000, hukuman: "35 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D06", pelanggaran: "Peralatan konsumsi narkotika", denda: 22000, hukuman: "12 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D07", pelanggaran: "Transportasi bahan kimia narkotika", denda: 55000, hukuman: "25 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D08", pelanggaran: "Resep palsu narkotika", denda: 47000, hukuman: "18 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D09", pelanggaran: "Pencabutan Kanabis", denda: 25000, hukuman: "15 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D10", pelanggaran: "Kepemilikan Srimulat", denda: 10000, hukuman: "10 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D11", pelanggaran: "Kepemilikan Sabu", denda: 10000, hukuman: "13 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+  { kategori: 4, kode: "D12", pelanggaran: "Narkotika di bagasi kendaraan", denda: 15000, hukuman: "13 Bulan", deskripsi: "Tindak Pidana Narkotika" },
+
+  // --- PASAL E - SENJATA & BARANG ILEGAL ---
+  { kategori: 5, kode: "E01", pelanggaran: "Senjata tajam / tumpul", denda: 60000, hukuman: "10 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+  { kategori: 5, kode: "E02-1", pelanggaran: "Senpi ilegal (FIRST CLASS)", denda: 65000, hukuman: "12 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+  { kategori: 5, kode: "E02-2", pelanggaran: "Senpi ilegal (SECOND CLASS)", denda: 75000, hukuman: "15 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+  { kategori: 5, kode: "E02-3", pelanggaran: "Senpi ilegal (THIRD CLASS)", denda: 85000, hukuman: "20 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+  { kategori: 5, kode: "E03", pelanggaran: "Kepemilikan kevlar", denda: 25000, hukuman: "10 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+  { kategori: 5, kode: "E05", pelanggaran: "Bahan peledak ilegal", denda: 100000, hukuman: "30 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+  { kategori: 5, kode: "E07", pelanggaran: "Uang Merah (0-5k)", denda: 15000, hukuman: "14 Bulan", deskripsi: "Kepemilikan uang ilegal" },
+  { kategori: 5, kode: "E08", pelanggaran: "Uang Merah (5k-20k)", denda: 18000, hukuman: "16 Bulan", deskripsi: "Kepemilikan uang ilegal" },
+  { kategori: 5, kode: "E09", pelanggaran: "Uang Merah (20k-50k)", denda: 25000, hukuman: "20 Bulan", deskripsi: "Kepemilikan uang ilegal" },
+  { kategori: 5, kode: "E10", pelanggaran: "Uang Merah (50k-100k)", denda: 30000, hukuman: "25 Bulan", deskripsi: "Kepemilikan uang ilegal" },
+  { kategori: 5, kode: "E11", pelanggaran: "Uang Merah (100k-200k)", denda: 40000, hukuman: "30 Bulan", deskripsi: "Kepemilikan uang ilegal" },
+  { kategori: 5, kode: "E12", pelanggaran: "Barang tindakan kriminal", denda: 15000, hukuman: "15 Bulan", deskripsi: "Kepemilikan barang ilegal" },
+
+  // --- PASAL F - KEJAHATAN BERAT ---
+  { kategori: 6, kode: "F01", pelanggaran: "Pembegalan", denda: 50000, hukuman: "15 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F02", pelanggaran: "Perampokan Warung", denda: 55000, hukuman: "17 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F03", pelanggaran: "Pencurian Mobil", denda: 40000, hukuman: "12 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F04", pelanggaran: "Penyerangan instansi bertugas", denda: 26000, hukuman: "10 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F05", pelanggaran: "Penyanderaan warga/instansi", denda: 70000, hukuman: "15 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F06", pelanggaran: "Peperangan bersenjata kelompok", denda: 75000, hukuman: "25 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F08", pelanggaran: "Perampokan bersenjata", denda: 100000, hukuman: "30 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F11", pelanggaran: "Terorisme", denda: 100000, hukuman: "30 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F13", pelanggaran: "Pembunuhan", denda: 100000, hukuman: "30 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F15", pelanggaran: "Perampokan Bank Flecca", denda: 25000, hukuman: "30 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+  { kategori: 6, kode: "F16", pelanggaran: "Penembakan warga/polisi", denda: 35000, hukuman: "40 Bulan", deskripsi: "Tindak Kejahatan Berat" },
+
+  // --- PASAL G - FINANSIAL ---
+  { kategori: 7, kode: "G01", pelanggaran: "Pencucian uang", denda: 100000, hukuman: "20 Bulan", deskripsi: "Kejahatan Finansial" },
+  { kategori: 7, kode: "G02", pelanggaran: "Penipuan bisnis", denda: 20000, hukuman: "15 Bulan", deskripsi: "Kejahatan Finansial" },
+  { kategori: 7, kode: "G03", pelanggaran: "Pemalsuan dokumen keuangan", denda: 15000, hukuman: "18 Bulan", deskripsi: "Kejahatan Finansial" },
+  { kategori: 7, kode: "G04", pelanggaran: "Penghindaran pajak", denda: 13000, hukuman: "12 Bulan", deskripsi: "Kejahatan Finansial" },
+  { kategori: 7, kode: "G06", pelanggaran: "Penyelundupan barang", denda: 45000, hukuman: "20 Bulan", deskripsi: "Kejahatan Finansial" },
+
+  // --- PASAL H - PELANGGARAN PERILAKU ---
+  { kategori: 8, kode: "H01", pelanggaran: "Membahayakan Diri Sendiri", denda: 30000, hukuman: "5 Bulan", deskripsi: "Pelanggaran Perilaku" },
+  { kategori: 8, kode: "H03", pelanggaran: "Penyerangan Tanpa Motif Jelas", denda: 85000, hukuman: "15 Bulan", deskripsi: "Pelanggaran Perilaku" },
+  { kategori: 8, kode: "H04", pelanggaran: "Kendaraan sebagai Senjata", denda: 95000, hukuman: "12 Bulan", deskripsi: "Pelanggaran Perilaku" },
+  { kategori: 8, kode: "H05", pelanggaran: "Tindakan Provokatif", denda: 55000, hukuman: "0 Bulan", deskripsi: "Pelanggaran Perilaku" }
+];
+
+    const fmtUang = (n) => "$" + Number(n).toLocaleString("id-ID");
+    let currentUser = null;
+    let editingId = null; // null = mode "buat baru", isi = mode "edit"
+
+    // ====== Pemilih pasal (checkbox list, dikelompokkan per kategori) ======
+    const pasalTerpilih = new Set();
+
+    function renderPasalPicker() {
+      const mount = document.getElementById("pasal-picker");
+      const kategoriIds = [...new Set(PASAL_DATA.map((p) => p.kategori))].sort((a, b) => a - b);
+      mount.innerHTML = kategoriIds.map((kid) => {
+        const rows = PASAL_DATA.filter((p) => p.kategori === kid).map((p) => `
+          <label style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12px;cursor:pointer" data-cat="${kid}">
+            <input type="checkbox" data-kode="${p.kode}" onchange="togglePasal('${p.kode}', this.checked)" style="margin-top:2px">
+            <span><strong>${p.kode}</strong> — ${p.pelanggaran} <span style="color:var(--faint)">(${fmtUang(p.denda)})</span></span>
+          </label>`).join("");
+        return `<div data-catgroup="${kid}"><div style="font-size:11px;font-weight:700;color:var(--muted);margin-top:8px">Kategori ${kid}</div>${rows}</div>`;
+      }).join("");
+    }
+
+    function togglePasal(kode, checked) {
+      if (checked) pasalTerpilih.add(kode); else pasalTerpilih.delete(kode);
+      const total = PASAL_DATA.filter((p) => pasalTerpilih.has(p.kode)).reduce((s, p) => s + p.denda, 0);
+      document.getElementById("f-total-denda").textContent = fmtUang(total);
+    }
+
+    document.querySelectorAll("#pasalFilterBar .filter-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("#pasalFilterBar .filter-btn").forEach((b) => b.classList.toggle("active", b === btn));
+        const cat = btn.dataset.cat;
+        document.querySelectorAll("#pasal-picker [data-catgroup]").forEach((g) => {
+          g.style.display = cat === "0" || g.dataset.catgroup === cat ? "block" : "none";
+        });
+      });
+    });
+
+    // ====== Upload / paste foto KTP (maks 2, dikompres) ======
+    const MAX_KTP = 2;
+    let ktpList = [];
+
+    function renderKtpPreview() {
+      const el = document.getElementById("ktp-preview");
+      el.innerHTML = ktpList.map((src, i) => `
+        <div style="position:relative">
+          <img src="${src}" style="width:90px;height:60px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+          <button type="button" onclick="removeKtp(${i})" style="position:absolute;top:-6px;right:-6px;background:#b91c1c;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1;">×</button>
+        </div>`).join("");
+    }
+    function removeKtp(i) { ktpList.splice(i, 1); renderKtpPreview(); }
+
+    function compressImage(file, maxDim, quality) {
+      return new Promise((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          let { width, height } = img;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+            else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width; canvas.height = height;
+          canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+          URL.revokeObjectURL(objectUrl);
+          resolve(canvas.toDataURL("image/jpeg", quality));
+        };
+        img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Gagal memuat gambar.")); };
+        img.src = objectUrl;
+      });
+    }
+    async function compressUntilSmallEnough(file, maxBytes) {
+      let quality = 0.72;
+      let dataUrl = await compressImage(file, 1000, quality);
+      while (dataUrl.length * 0.75 > maxBytes && quality > 0.35) {
+        quality -= 0.12;
+        dataUrl = await compressImage(file, 1000, quality);
+      }
+      return dataUrl;
+    }
+    async function addKtpFiles(fileList) {
+      const errorEl = document.getElementById("form-error");
+      errorEl.textContent = "";
+      const files = Array.from(fileList || []).filter((f) => f.type.startsWith("image/"));
+      for (const file of files) {
+        if (ktpList.length >= MAX_KTP) { errorEl.textContent = `Maksimal ${MAX_KTP} foto KTP.`; break; }
+        try { ktpList.push(await compressUntilSmallEnough(file, 500 * 1024)); }
+        catch (e) { errorEl.textContent = `Gagal memproses gambar: ${e.message}`; }
+      }
+      renderKtpPreview();
+    }
+    const ktpDropzone = document.getElementById("ktp-dropzone");
+    const ktpInput = document.getElementById("ktp-input");
+    ktpDropzone.addEventListener("click", () => ktpInput.click());
+    ktpInput.addEventListener("change", (e) => { addKtpFiles(e.target.files); ktpInput.value = ""; });
+    document.addEventListener("paste", (e) => {
+      const items = Array.from((e.clipboardData && e.clipboardData.items) || []).filter((it) => it.type.startsWith("image/"));
+      if (items.length) addKtpFiles(items.map((it) => it.getAsFile()));
+    });
+
+    // ====== Reset form ======
+    function resetForm() {
+      editingId = null;
+      document.getElementById("form-submit").textContent = "Arsipkan Berkas";
+      document.getElementById("f-nama-petugas").value = "";
+      document.getElementById("f-umur-petugas").value = "";
+      document.getElementById("f-divisi-petugas").value = "";
+      document.getElementById("f-nama-tersangka").value = "";
+      document.getElementById("f-umur-tersangka").value = "";
+      document.getElementById("f-ciri-tersangka").value = "";
+      document.getElementById("f-lokasi").value = "";
+      document.getElementById("f-kronologi").value = "";
+      pasalTerpilih.clear();
+      document.querySelectorAll("#pasal-picker input[data-kode]").forEach((cb) => (cb.checked = false));
+      document.getElementById("f-total-denda").textContent = fmtUang(0);
+      ktpList = [];
+      renderKtpPreview();
+      document.getElementById("form-error").textContent = "";
+    }
+    document.getElementById("form-batal").addEventListener("click", resetForm);
+
+    // ====== Submit (create atau edit) ======
+    document.getElementById("form-submit").addEventListener("click", async () => {
+      const errorEl = document.getElementById("form-error");
+      errorEl.textContent = "";
+      const namaTersangka = document.getElementById("f-nama-tersangka").value.trim();
+      const kronologi = document.getElementById("f-kronologi").value.trim();
+      if (!namaTersangka) { errorEl.textContent = "Nama tersangka wajib diisi."; return; }
+      if (!kronologi) { errorEl.textContent = "Kronologi kejadian wajib diisi."; return; }
+
+      const dipilih = PASAL_DATA.filter((p) => pasalTerpilih.has(p.kode));
+      const payload = {
+        namaPetugas: document.getElementById("f-nama-petugas").value.trim(),
+        umurPetugas: document.getElementById("f-umur-petugas").value.trim(),
+        divisiPetugas: document.getElementById("f-divisi-petugas").value.trim(),
+        namaTersangka,
+        umurTersangka: document.getElementById("f-umur-tersangka").value.trim(),
+        ciriTersangka: document.getElementById("f-ciri-tersangka").value.trim(),
+        lokasi: document.getElementById("f-lokasi").value.trim(),
+        kronologi,
+        pasalDipilih: dipilih.map((p) => `${p.kode} - ${p.pelanggaran}`),
+        totalDenda: fmtUang(dipilih.reduce((s, p) => s + p.denda, 0)),
+        fotoKtp: ktpList,
+      };
+
+      const btn = document.getElementById("form-submit");
+      btn.disabled = true; btn.textContent = editingId ? "Menyimpan..." : "Mengirim...";
+      try {
+        if (editingId) {
+          await api(`/api/discord?id=${editingId}`, { method: "PATCH", body: JSON.stringify(payload) });
+          alert("Arrest record berhasil diperbarui.");
+        } else {
+          await api("/api/discord", { method: "POST", body: JSON.stringify(payload) });
+          alert("Berkas perkara berhasil diarsipkan & dikirim ke Discord.");
+        }
+        resetForm();
+        refreshArrestList();
+      } catch (e) {
+        errorEl.textContent = e.message || "Gagal menyimpan berkas.";
+      } finally {
+        btn.disabled = false; btn.textContent = editingId ? "Simpan Perubahan" : "Arsipkan Berkas";
+      }
+    });
+
+    // ====== List + search ======
+    let allArrests = [];
+
+    function fmtTanggalWaktu(iso) {
+      if (!iso) return "-";
+      try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); }
+      catch (e) { return iso; }
+    }
+
+    function renderArrestList() {
+      const q = document.getElementById("arrest-search").value.trim().toLowerCase();
+      const tbody = document.getElementById("arrest-body");
+      const filtered = !q ? allArrests : allArrests.filter((a) =>
+        (a.namaTersangka || "").toLowerCase().includes(q) || (a.namaPetugas || "").toLowerCase().includes(q));
+
+      tbody.innerHTML = filtered.length
+        ? filtered.map((a) => `
+          <tr>
+            <td style="white-space:nowrap">${fmtTanggalWaktu(a.tanggal)}</td>
+            <td>${a.namaTersangka}</td>
+            <td>${a.namaPetugas} (${a.pangkatPetugas || "-"})</td>
+            <td class="denda">${a.totalDenda || "-"}</td>
+            <td style="white-space:nowrap">
+              <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px" onclick="lihatDetail('${a.id}')">Lihat</button>
+              ${currentUser && currentUser.isHighCommand ? `
+                <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px" onclick="editArrest('${a.id}')">Edit</button>
+                <button class="btn btn-secondary" style="padding:4px 8px;font-size:11px;color:#ef4444" onclick="hapusArrest('${a.id}')">Hapus</button>` : ""}
+            </td>
+          </tr>`).join("")
+        : `<tr><td colspan="5" class="empty">${q ? "Nggak ada hasil buat pencarian ini." : "Belum ada arrest record."}</td></tr>`;
+    }
+
+    async function refreshArrestList() {
+      const tbody = document.getElementById("arrest-body");
+      tbody.innerHTML = `<tr><td colspan="5" class="empty">Memuat...</td></tr>`;
+      try {
+        const data = await api("/api/discord");
+        allArrests = data.arrests || [];
+        renderArrestList();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Gagal memuat: ${e.message}</td></tr>`;
+      }
+    }
+    document.getElementById("arrest-search").addEventListener("input", renderArrestList);
+
+    // ====== Detail modal ======
+    function lihatDetail(id) {
+      const a = allArrests.find((x) => x.id === id);
+      if (!a) return;
+      const foto = (a.fotoKtp || []).map((src) => `<img src="${src}" style="width:100%;max-width:260px;border-radius:8px;border:1px solid var(--border);margin-top:6px">`).join("");
+      document.getElementById("detail-body").innerHTML = `
+        <div><strong>Tanggal:</strong> ${fmtTanggalWaktu(a.tanggal)}</div>
+        <h3 style="font-size:12px;color:var(--red);margin:12px 0 4px">Petugas</h3>
+        <div>Nama: ${a.namaPetugas || "-"}</div>
+        <div>Umur: ${a.umurPetugas || "-"}</div>
+        <div>Divisi: ${a.divisiPetugas || "-"}</div>
+        <div>Pangkat: ${a.pangkatPetugas || "-"}</div>
+        <h3 style="font-size:12px;color:var(--red);margin:12px 0 4px">Tersangka</h3>
+        <div>Nama: ${a.namaTersangka}</div>
+        <div>Umur: ${a.umurTersangka || "-"}</div>
+        <div>Ciri-ciri: ${a.ciriTersangka || "-"}</div>
+        <div>Lokasi: ${a.lokasi || "-"}</div>
+        <h3 style="font-size:12px;color:var(--red);margin:12px 0 4px">Kasus</h3>
+        <div>Pasal: ${(a.pasalDipilih || []).join(", ") || "-"}</div>
+        <div>Denda: ${a.totalDenda || "-"}</div>
+        <div style="margin-top:6px">Kronologi:<br>${a.kronologi}</div>
+        ${foto ? `<h3 style="font-size:12px;color:var(--red);margin:12px 0 4px">Foto KTP</h3>${foto}` : ""}
+      `;
+      document.getElementById("detail-modal").style.display = "flex";
+    }
+    document.getElementById("detail-close").addEventListener("click", () => {
+      document.getElementById("detail-modal").style.display = "none";
+    });
+
+    // ====== Edit (HC only) ======
+    function editArrest(id) {
+      const a = allArrests.find((x) => x.id === id);
+      if (!a) return;
+      editingId = id;
+      document.getElementById("f-nama-petugas").value = a.namaPetugas || "";
+      document.getElementById("f-umur-petugas").value = a.umurPetugas || "";
+      document.getElementById("f-divisi-petugas").value = a.divisiPetugas || "";
+      document.getElementById("f-nama-tersangka").value = a.namaTersangka || "";
+      document.getElementById("f-umur-tersangka").value = a.umurTersangka || "";
+      document.getElementById("f-ciri-tersangka").value = a.ciriTersangka || "";
+      document.getElementById("f-lokasi").value = a.lokasi || "";
+      document.getElementById("f-kronologi").value = a.kronologi || "";
+      pasalTerpilih.clear();
+      (a.pasalDipilih || []).forEach((s) => {
+        const kode = s.split(" - ")[0];
+        pasalTerpilih.add(kode);
+        const cb = document.querySelector(`#pasal-picker input[data-kode="${kode}"]`);
+        if (cb) cb.checked = true;
+      });
+      const total = PASAL_DATA.filter((p) => pasalTerpilih.has(p.kode)).reduce((s, p) => s + p.denda, 0);
+      document.getElementById("f-total-denda").textContent = fmtUang(total);
+      ktpList = a.fotoKtp || [];
+      renderKtpPreview();
+      document.getElementById("form-submit").textContent = "Simpan Perubahan";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // ====== Hapus (HC only) ======
+    async function hapusArrest(id) {
+      if (!confirm("Hapus arrest record ini? Aksi ini nggak bisa dibatalkan.")) return;
+      try {
+        await api(`/api/discord?id=${id}`, { method: "DELETE" });
+        refreshArrestList();
+      } catch (e) {
+        alert(e.message);
+      }
+    }
+
+    (async function init() {
+      const user = await requireAuth();
+      if (!user) return;
+      currentUser = user;
+      renderNavbar("arrest-record", user);
+      document.getElementById("f-pangkat-petugas").value = user.pangkat || "-";
+      renderPasalPicker();
+      refreshArrestList();
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kepolisian Nexotis - Profil Me</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="navbar-mount">
+    <div class="navbar"><div class="brand"><span class="flag" id="nav-logo"></span> kepolisian nexotis</div></div>
+  </div>
+
+  <div class="wrap" id="wrap">
+    <div id="skel">
+      <div class="skel" style="height:200px;border-radius:18px;margin-bottom:16px"></div>
+      <div class="skel" style="height:260px;border-radius:16px"></div>
+    </div>
+    <div id="isi" style="display:none">
+
+      <!-- Pratinjau langsung (ikut berubah saat form diketik) -->
+      <div class="hero">
+        <div class="hero-banner" id="p-banner"></div>
+        <div class="hero-body">
+          <div class="ava hero-ava" id="p-ava"></div>
+          <div class="hero-main">
+            <div class="hero-name" id="p-nama"></div>
+            <div class="lbls" id="p-lbl"></div>
+            <p class="hero-bio" id="p-bio"></p>
+            <div class="hero-meta">Pratinjau - begini profilmu terlihat oleh warga lain di forum.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cols">
+        <div>
+          <div class="panel">
+            <div class="panel-h"><span>Informasi Profil</span></div>
+            <div class="panel-b">
+              <label class="sw" style="margin-bottom:14px">
+                <span><b>Samakan nama dengan Discord</b><small id="sw-desc"></small></span>
+                <input type="checkbox" id="f-sinkron"><span class="knob"></span>
+              </label>
+
+              <div class="form-group">
+                <label for="f-nama">Nama tampilan</label>
+                <input type="text" id="f-nama" maxlength="32" placeholder="nama yang tampil di forum" autocomplete="off">
+              </div>
+
+              <div class="form-group" style="margin-bottom:6px">
+                <label for="f-bio">Bio</label>
+                <textarea id="f-bio" maxlength="300" style="min-height:104px" placeholder="masukan bioo yang anda inginkan...."></textarea>
+                <div class="counter"><span id="f-cnt">0</span>/300</div>
+              </div>
+
+              <div class="error-msg" id="f-err"></div>
+              <div class="okmsg" id="f-ok"></div>
+              <button class="btn btn-primary" id="f-simpan">Simpan Perubahan</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-h"><span>Sinkron dengan Discord</span></div>
+            <div class="panel-b">
+              <p style="font-size:12px;color:var(--muted);line-height:1.6;margin:0 0 10px">
+                Foto profil, banner, nama, dan <b>label</b> kamu diambil dari Discord. Datanya diperbarui setiap kali kamu login, atau klik tombol di bawah biar langsung update tanpa logout.
+              </p>
+              <div style="font-size:11px;color:var(--faint);margin-bottom:12px" id="sync-info"></div>
+              <a class="btn btn-dc btn-a" style="display:block" href="/api/auth-login?aksi=discord&next=profil">Sinkronkan sekarang</a>
+              <div class="note" style="margin-top:12px">
+                <b>Bio Discord</b> ("Tentang Saya") ridak ada akses untuk menatik informasi bio
+              </div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><span>Label Kamu</span></div>
+            <div class="panel-b">
+              <div class="lbls" id="l-lbl" style="margin-bottom:10px"></div>
+              <div class="note" id="l-note"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  document.getElementById("nav-logo").innerHTML = LOGO_SVG;
+  const $ = (id) => document.getElementById(id);
+  let W = null;
+
+  function rel(iso) {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (!isFinite(s)) return "-";
+    if (s < 60) return "baru saja";
+    if (s < 3600) return Math.floor(s / 60) + " menit lalu";
+    if (s < 86400) return Math.floor(s / 3600) + " jam lalu";
+    return Math.floor(s / 86400) + " hari lalu";
+  }
+
+  // Pratinjau: nama & bio ikut input, sisanya (avatar/banner/label) dari Discord.
+  function pratinjau() {
+    const sinkron = $("f-sinkron").checked;
+    const nama = sinkron ? W.namaDiscord : ($("f-nama").value.trim() || W.namaDiscord);
+    const bio = $("f-bio").value.trim();
+    $("p-nama").textContent = nama;
+    $("p-bio").textContent = bio || "Belum ada bio.";
+    $("p-bio").className = "hero-bio" + (bio ? "" : " kosong");
+    $("f-cnt").textContent = $("f-bio").value.length;
+    renderAvatarW($("p-ava"), nama, W.avatar);
+    $("f-nama").disabled = sinkron;
+    $("f-nama").placeholder = sinkron ? "ikut nama Discord" : "nama yang tampil di forum";
+  }
+
+  function isi(w) {
+    W = w;
+    $("f-sinkron").checked = w.sinkron;
+    $("f-nama").value = w.sinkron ? "" : w.namaKustom;
+    $("f-bio").value = w.bio;
+    $("sw-desc").textContent = `Sekarang di Discord: ${w.namaDiscord}`;
+    const b = $("p-banner");
+    b.style.backgroundImage = w.banner ? `url('${w.banner}')` : "";
+    if (!w.banner && w.accent) b.style.background = w.accent;
+    $("p-lbl").innerHTML = renderLabels(w.labels);
+    $("l-lbl").innerHTML = renderLabels(w.labels);
+    $("sync-info").textContent = w.roleAktif
+      ? (w.terakhirSinkron ? `Role server terakhir disinkron ${rel(w.terakhirSinkron)}.` : "Role server belum pernah disinkron — klik tombol di bawah.")
+      : `Login terakhir ${rel(w.terakhirLogin)}.`;
+    $("l-note").innerHTML = (w.roleAktif
+      ? "Label di atas <b>otomatis</b> dari role kamu di server Discord Kepolisian Nexotis, dan ikut berubah saat role kamu berubah (klik <i>Sinkronkan sekarang</i> setelah dapat role baru). "
+      : "Label <b>Warga</b> diberikan otomatis ke semua yang masuk lewat Discord. ") +
+    pratinjau();
+  }
+
+  ["f-sinkron", "f-nama", "f-bio"].forEach((id) => $(id).addEventListener("input", pratinjau));
+
+  $("f-simpan").addEventListener("click", async () => {
+    const err = $("f-err"), ok = $("f-ok"), btn = $("f-simpan");
+    err.textContent = ""; ok.textContent = "";
+    const sinkron = $("f-sinkron").checked;
+    const body = { sinkron, bio: $("f-bio").value };
+    if (!sinkron) body.namaKustom = $("f-nama").value;
+    btn.disabled = true; btn.textContent = "Menyimpan...";
+    try {
+      const r = await api("/api/auth-login?aksi=warga-profil", { method: "POST", body: JSON.stringify(body) });
+      isi(r.warga);
+      renderWargaNavbar("profil", r.warga);
+      ok.textContent = "Tersimpan. Profil kamu sudah diperbarui di forum.";
+    } catch (e) { err.textContent = e.message; }
+    finally { btn.disabled = false; btn.textContent = "Simpan Perubahan"; }
+  });
+
+  (async () => {
+    let data;
+    try { data = await api("/api/auth-login?aksi=warga-me"); }
+    catch (e) { window.location.href = "index.html"; return; }
+    renderWargaNavbar("profil", data.warga);
+    isi(data.warga);
+    $("skel").style.display = "none";
+    $("isi").style.display = "block";
+    // Baru balik dari Discord? (login terakhir < 30 detik lalu)
+    if (Date.now() - new Date(data.warga.terakhirLogin).getTime() < 30000) $("f-ok").textContent = "Berhasil disinkronkan dari Discord.";
+  })();
+</script>
+</body>
+</html>

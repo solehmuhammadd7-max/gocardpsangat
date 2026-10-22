@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kepolisian Nexotis - Home</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="navbar-mount">
+    <div class="navbar"><div class="brand"><span class="flag" id="nav-logo"></span> kepolisian nexotis</div></div>
+  </div>
+
+  <div class="wrap" id="wrap">
+    <!-- Skeleton: tampil sebentar selama data dimuat -->
+    <div id="skel">
+      <div class="skel" style="height:230px;border-radius:18px;margin-bottom:16px"></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px">
+        <div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div><div class="skel" style="height:68px"></div>
+      </div>
+      <div class="skel" style="height:200px;border-radius:16px"></div>
+    </div>
+    <div id="isi" style="display:none"></div>
+  </div>
+
+  <!-- Popup Iklan (sekali tiap halaman dibuka) -->
+  <div class="modal-overlay" id="iklan-modal">
+    <div class="modal-box" style="max-width:420px;text-align:left">
+      <div id="iklan-modal-content"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px">
+        <div id="iklan-modal-nav" style="font-size:12px;color:var(--faint)"></div>
+        <button class="btn btn-secondary" id="iklan-modal-close">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  document.getElementById("nav-logo").innerHTML = LOGO_SVG;
+
+  // Ikon SVG kecil (tanpa emoji / file gambar tambahan)
+  const IC = {
+    pengumuman: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+    saran: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+    kritik: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    tanya: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>',
+    umum: '<path d="M4 5h16v11H9l-5 4z"/>',
+    pin: '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v8"/>',
+    post: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+    topik: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+    warga: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M17 14c2.5 0 4 1.8 4 4.5"/>',
+    api: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  };
+  const svg = (k, n = 20) => `<svg width="${n}" height="${n}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[k] || IC.umum}</svg>`;
+
+  const tgl = (iso) => { try { return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }); } catch (e) { return "-"; } };
+  function rel(iso) {
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (!isFinite(s)) return "-";
+    if (s < 60) return "baru saja";
+    if (s < 3600) return Math.floor(s / 60) + " mnt lalu";
+    if (s < 86400) return Math.floor(s / 3600) + " jam lalu";
+    if (s < 86400 * 7) return Math.floor(s / 86400) + " hari lalu";
+    return tgl(iso);
+  }
+  function sapa() {
+    const j = (new Date().getUTCHours() + 7) % 24; // WIB
+    return j < 4 ? "GoodNight" : j < 11 ? "GoodMorning" : j < 15 ? "Good afternoon" : j < 18 ? "Good afternoon" : "GoodNight";
+  }
+
+  // ====== Popup Iklan ======
+  let iklanList = [], iklanIndex = 0;
+  function renderIklanModal() {
+    const k = iklanList[iklanIndex];
+    document.getElementById("iklan-modal-content").innerHTML = `
+      ${k.foto && String(k.foto).startsWith("http") ? `<img src="${escW(k.foto)}" style="width:100%;max-height:260px;object-fit:cover;border-radius:10px;margin-bottom:12px" alt="">` : ""}
+      ${k.teks ? `<div style="font-size:13px;white-space:pre-wrap">${escW(k.teks)}</div>` : ""}`;
+    const navEl = document.getElementById("iklan-modal-nav");
+    if (iklanList.length > 1) {
+      navEl.innerHTML = `
+        <button class="btn-link" id="iklan-prev" ${iklanIndex === 0 ? "disabled" : ""}>‹ Sebelumnya</button>
+        <span style="margin:0 6px">${iklanIndex + 1}/${iklanList.length}</span>
+        <button class="btn-link" id="iklan-next" ${iklanIndex === iklanList.length - 1 ? "disabled" : ""}>Berikutnya ›</button>`;
+      document.getElementById("iklan-prev").addEventListener("click", () => { if (iklanIndex > 0) { iklanIndex--; renderIklanModal(); } });
+      document.getElementById("iklan-next").addEventListener("click", () => { if (iklanIndex < iklanList.length - 1) { iklanIndex++; renderIklanModal(); } });
+    } else navEl.innerHTML = "";
+  }
+  document.getElementById("iklan-modal-close").addEventListener("click", () => document.getElementById("iklan-modal").classList.remove("open"));
+
+  // ====== Render dashboard ======
+  function tampil(d) {
+    const w = d.warga, s = d.stat || { topik: 0, post: 0, warga: 0 }, me = d.saya || { post: 0, topik: 0 };
+    const feed = (t) => `
+      <div class="feed">
+        <div class="ico" data-k="${escW(t.kat)}">${svg(t.pin ? "pin" : t.kat)}</div>
+        <div class="fm">
+          <a class="ft" href="forum.html#/t/${escW(t.id)}">${escW(t.judul)}</a>
+          <div class="fs">${escW(t.katNama)} · terakhir oleh ${escW(t.nama)} · ${rel(t.tanggal)}</div>
+        </div>
+        <span class="chip" title="Jumlah balasan">${t.balasan} balasan</span>
+      </div>`;
+
+    document.getElementById("isi").innerHTML = `
+      <div class="hero">
+        <div class="hero-banner" ${w.banner ? `style="background-image:url('${escW(w.banner)}')"` : w.accent ? `style="background:${escW(w.accent)}"` : ""}></div>
+        <div class="hero-body">
+          <div class="ava hero-ava" id="h-ava"></div>
+          <div class="hero-main">
+            <div class="hero-name">${sapa()}, ${escW(w.nama)}</div>
+            <div class="lbls">${renderLabels(w.labels)}</div>
+            <p class="hero-bio ${w.bio ? "" : "kosong"}">${w.bio ? escW(w.bio) : "Kamu bisa menulis bio yah di website ini.."}</p>
+            <div class="hero-meta">Bergabung ${tgl(w.pertamaLogin)} · Login terakhir ${rel(w.terakhirLogin)}${w.roleAktif && w.terakhirSinkron ? ` · Role Discord disinkron ${rel(w.terakhirSinkron)}` : ""}</div>
+          </div>
+          <div class="hero-act">
+            <a class="btn btn-primary btn-a" href="profil.html">Edit Profil</a>
+            <a class="btn btn-dc btn-a" href="/api/auth-login?aksi=discord&next=warga">Sinkron Discord</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="tiles">
+        <div class="tile" style="--i:0"><div class="ti">${svg("post")}</div><div><b>${me.post}</b><small>post kamu</small></div></div>
+        <div class="tile" style="--i:1"><div class="ti b">${svg("topik")}</div><div><b>${me.topik}</b><small>topik kamu</small></div></div>
+        <div class="tile" style="--i:2"><div class="ti g">${svg("warga")}</div><div><b>${s.warga}</b><small>warga terdaftar</small></div></div>
+        <div class="tile" style="--i:3"><div class="ti a">${svg("api")}</div><div><b>${s.post}</b><small>post di forum</small></div></div>
+      </div>
+
+      ${d.iklan && d.iklan.length ? `
+      <div class="panel"><div class="panel-h"><span>Papan Iklan</span></div>
+        <div class="strip">${d.iklan.map((k) => `<div class="ad">${k.foto && String(k.foto).startsWith("http") ? `<img loading="lazy" src="${escW(k.foto)}" alt="">` : ""}${k.teks ? `<div>${escW(k.teks)}</div>` : ""}</div>`).join("")}</div>
+      </div>` : ""}
+
+      <div class="cols">
+        <div>
+          <div class="panel">
+            <div class="panel-h"><span>Pengumuman Resmi</span><a href="forum.html#/k/pengumuman">Lihat semua ›</a></div>
+            ${d.pengumuman && d.pengumuman.length ? d.pengumuman.map((a) => `
+              <div class="ann ${a.pin ? "pin" : ""}">
+                ${a.pin ? `<span class="chip">Disematkan</span> ` : ""}<span class="chip k">${rel(a.tanggal)}</span>
+                <a class="at" href="forum.html#/t/${escW(a.id)}">${escW(a.judul)}</a>
+                <p>${escW(a.cuplikan || "")}${(a.cuplikan || "").length >= 140 ? "…" : ""}</p>
+              </div>`).join("") : `<div class="kosong">Belum ada Announcement</div>`}
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><span>Lagi Ramai di Forum</span><a href="forum.html">Buka forum ›</a></div>
+            ${d.aktivitas && d.aktivitas.length ? d.aktivitas.map(feed).join("") : `<div class="kosong">Belum ada orang yang mengisi forum ini, silahkan anda yang jadi pertama!!</div>`}
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-h"><span>Aksi Cepat</span></div>
+            <div class="quick">
+              <a class="qa" href="forum.html#/k/saran"><span class="ico" data-k="saran">${svg("saran")}</span><span>Kasih Saran<small>ide buat kepolisian</small></span></a>
+              <a class="qa" href="forum.html#/k/kritik"><span class="ico" data-k="kritik">${svg("kritik")}</span><span>Sampaikan Kritik<small>keluhan &amp; evaluasi</small></span></a>
+              <a class="qa" href="forum.html#/k/tanya"><span class="ico" data-k="tanya">${svg("tanya")}</span><span>Tanya Jawab<small>Anda bingung cara kerja polisi?</small></span></a>
+              <a class="qa" href="profil.html"><span class="ico">${svg("edit")}</span><span>Ubah Profil<small>nama &amp; bio</small></span></a>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><span>Kategori Forum</span></div>
+            ${(d.kategori || []).map((k) => `
+              <div class="feed">
+                <div class="ico" data-k="${escW(k.id)}">${svg(k.id)}</div>
+                <div class="fm"><a class="ft" href="forum.html#/k/${escW(k.id)}">${escW(k.nama)}</a><div class="fs">${escW(k.desk)}</div></div>
+                <span class="chip k">${k.topik}</span>
+              </div>`).join("")}
+          </div>
+        </div>
+      </div>`;
+
+    renderAvatarW(document.getElementById("h-ava"), w.nama, w.avatar);
+    document.getElementById("skel").style.display = "none";
+    document.getElementById("isi").style.display = "block";
+  }
+
+  (async () => {
+    let data;
+    try { data = await api("/api/auth-login?aksi=warga-beranda"); }
+    catch (e) { window.location.href = "index.html"; return; }
+
+    renderWargaNavbar("beranda", data.warga);
+    tampil(data);
+
+    iklanList = data.iklan || [];
+    if (iklanList.length) { iklanIndex = 0; renderIklanModal(); document.getElementById("iklan-modal").classList.add("open"); }
+  })();
+</script>
+</body>
+</html>

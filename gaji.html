@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gaji - Kepolisian Nexotis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="navbar-mount"></div>
+
+  <div class="container">
+    <div class="card">
+      <h2 id="greeting">Gaji Mingguan</h2>
+      <div class="sub" id="rank-div">Pangkat | Divisi</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card money">
+        <div class="label">Gaji per Minggu</div>
+        <div class="value" id="stat-gaji">$0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Claim Gajihh</h2>
+      <div class="sub">
+        Ambil gajih cuma bisa pas <strong>Senin–Rabu</strong> ya, itu juga minimal
+        udah hadir <strong id="min-hadir-label">2</strong> hari minggu ini. Kelewat
+        Rabu, jatah minggu ini <strong>hangus</strong> (gabisa diambil lagi) dan minggu
+        depan mulai dari nol lagi.
+      </div>
+      <div id="hadir-progress" style="font-size:12px;color:var(--faint);margin-bottom:10px"></div>
+      <div id="klaim-status" style="font-size:13px;margin-bottom:14px"></div>
+      <div class="error-msg" id="klaim-error"></div>
+      <button class="btn btn-primary" id="klaim-btn">Klaim Gaji Sekarang</button>
+    </div>
+
+    <div class="card">
+      <h2>History Gajih</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Minggu</th><th>Tanggal Diklaim</th><th>Jumlah</th></tr>
+          </thead>
+          <tbody id="riwayat-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  let user, gajiInfo;
+
+  (async function init() {
+    user = await requireAuth();
+    if (!user) return;
+    renderNavbar("gaji", user);
+    document.getElementById("greeting").textContent = `Gaji Mingguan ${user.namaKarakter || user.username}`;
+    document.getElementById("rank-div").textContent = user.pangkat;
+    await refresh();
+  })();
+
+  async function refresh() {
+    const data = await api("/api/me");
+    user = data.user;
+    gajiInfo = user.gaji;
+
+    document.getElementById("stat-gaji").textContent = `$${Number(gajiInfo.gajiSaya).toLocaleString("id-ID")}`;
+    document.getElementById("min-hadir-label").textContent = gajiInfo.minHadir;
+    document.getElementById("hadir-progress").textContent =
+      `Hadir minggu ini: ${gajiInfo.hadirMingguIni}/${gajiInfo.minHadir} hari`;
+    renderStatus();
+    renderRiwayat();
+  }
+
+  function renderStatus() {
+    const statusEl = document.getElementById("klaim-status");
+    const btn = document.getElementById("klaim-btn");
+    document.getElementById("klaim-error").textContent = "";
+
+    if (gajiInfo.sudahKlaimMingguIni) {
+      statusEl.innerHTML = `<span class="badge diterima">✅ Udah diklaim minggu ini</span>`;
+      btn.disabled = true;
+      btn.textContent = "Udah Di Ambil";
+    } else if (!gajiInfo.bisaKlaimHariIni) {
+      statusEl.innerHTML = `<span class="badge ditolak">⛔ Di luar jadwal (Senin–Rabu)</span> <span style="color:var(--faint)">— jatah minggu ini hangus, coba lagi Senin depan ya.</span>`;
+      btn.disabled = true;
+      btn.textContent = "Di Luar Jadwal";
+    } else if (gajiInfo.hadirMingguIni < gajiInfo.minHadir) {
+      statusEl.innerHTML = `<span class="badge ditolak">⛔ Hadir masih kurang (${gajiInfo.hadirMingguIni}/${gajiInfo.minHadir} hari)</span>`;
+      btn.disabled = true;
+      btn.textContent = "Hadir Kurang Nih";
+    } else {
+      statusEl.innerHTML = `<span class="badge rank">🟢 Udah bisa diklaim nih</span>`;
+      btn.disabled = false;
+      btn.textContent = "Klaim Gaji Sekarang";
+    }
+  }
+
+  function renderRiwayat() {
+    const tbody = document.getElementById("riwayat-body");
+    const rows = gajiInfo.riwayat || [];
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="3" class="empty">Belom pernah klaim gajih.</td></tr>`; return; }
+    tbody.innerHTML = rows.map((r) => `
+      <tr>
+        <td>${formatTanggal(r.minggu)}</td>
+        <td>${new Date(r.tanggal).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+        <td>$${Number(r.jumlah).toLocaleString("id-ID")}</td>
+      </tr>`).join("");
+  }
+
+  document.getElementById("klaim-btn").addEventListener("click", async () => {
+    const btn = document.getElementById("klaim-btn");
+    const errorEl = document.getElementById("klaim-error");
+    errorEl.textContent = "";
+    btn.disabled = true; btn.textContent = "Bentar ya...";
+    try {
+      await api("/api/me", { method: "POST", body: JSON.stringify({ klaimGaji: true }) });
+      await refresh();
+    } catch (e) {
+      errorEl.textContent = e.message;
+      renderStatus();
+    }
+  });
+</script>
+</body>
+</html>

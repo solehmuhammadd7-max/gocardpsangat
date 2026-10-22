@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kepolisian Nexotis - Forum</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    #app { max-width: 980px; margin: 18px auto; padding: 0 12px; }
+    .crumb { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .crumb a { color: var(--red); text-decoration: none; font-weight: 600; }
+    .box { background: var(--card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 14px; overflow: hidden; }
+    .box-h { padding: 10px 14px; font-weight: 700; font-size: 13px; background: linear-gradient(90deg, rgba(255,122,162,.18), rgba(255,153,204,.08)); color: var(--red); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--border); }
+    .row:hover { background: rgba(255,122,162,.05); }
+        .row .main { flex: 1; min-width: 0; }
+    .row .main a.t { color: var(--text); font-weight: 700; font-size: 14px; text-decoration: none; }
+    .row .main a.t:hover { color: var(--red); }
+    .sub { font-size: 11px; color: var(--faint); margin-top: 2px; }
+    .num { text-align: center; font-size: 11px; color: var(--muted); min-width: 62px; }
+    .num b { display: block; font-size: 15px; color: var(--text); }
+    .last { font-size: 11px; color: var(--muted); min-width: 150px; max-width: 190px; }
+    .tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 20px; background: rgba(255,122,162,.15); color: var(--red); margin-right: 4px; }
+    .tag.g { background: rgba(16,185,129,.15); color: var(--green); }
+    .tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 14px; border-top: 1px solid var(--border); }
+    .tools input, .tools select { width: auto; flex: 1; min-width: 120px; }
+    .pager { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; padding: 12px; }
+    .pager a, .pager span { padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; text-decoration: none; color: var(--text); background: #fff; }
+    .pager span.cur { background: var(--red); color: #fff; border-color: var(--red); }
+    .post { display: flex; border-top: 1px solid var(--border); }
+    .side { width: 150px; flex-shrink: 0; padding: 14px 10px; text-align: center; background: rgba(255,122,162,.05); border-right: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+    .side .ava { width: 64px; height: 64px; margin: 0 auto 8px; font-size: 20px; }
+    .ava { border-radius: 50%; background: linear-gradient(135deg, var(--red), var(--red-light)); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; }
+    .side b { display: block; color: var(--text); font-size: 13px; word-break: break-word; }
+    .body { flex: 1; min-width: 0; padding: 12px 16px; }
+    .body .meta { font-size: 11px; color: var(--faint); display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .content { font-size: 13px; line-height: 1.6; word-break: break-word; }
+    .content blockquote { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--red); background: rgba(255,122,162,.08); border-radius: 0 8px 8px 0; font-size: 12px; }
+    .content cite { display: block; font-weight: 700; font-style: normal; color: var(--red); margin-bottom: 4px; }
+    .content a { color: var(--red); }
+    .acts { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--border); }
+    .rx { border: 1px solid var(--border); background: #fff; border-radius: 20px; padding: 2px 8px; font-size: 13px; cursor: pointer; }
+    .rx.me { background: rgba(255,122,162,.2); border-color: var(--red); }
+    .rx small { font-size: 11px; margin-left: 2px; color: var(--muted); }
+    .lnk { background: none; border: none; color: var(--muted); font-size: 11px; cursor: pointer; padding: 2px 4px; }
+    .lnk:hover { color: var(--red); }
+    .edtb { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+    .edtb button { border: 1px solid var(--border); background: #fff; border-radius: 6px; padding: 3px 9px; font-size: 12px; cursor: pointer; min-width: 30px; }
+    .pad { padding: 14px; border-top: 1px solid var(--border); }
+    .side a.nm { display: block; color: var(--text); font-size: 13px; font-weight: 700; word-break: break-word; }
+    .side a.nm:hover { color: var(--red); }
+    .side .lbls { justify-content: center; margin: 6px 0 2px; }
+    .side .bio { margin-top: 6px; font-size: 11px; line-height: 1.5; color: var(--muted); font-style: italic; word-break: break-word; max-height: 66px; overflow: hidden; }
+    .box-h, .panel-h { letter-spacing: .1px; }
+    .hero { animation: none; }
+
+    /* Animasi ringan: cuma opacity & transform (murah di HP), mati otomatis kalau reduce-motion */
+    @keyframes fu { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes pop { 50% { transform: scale(1.2); } }
+    @keyframes fin { from { opacity: 0; } to { opacity: 1; } }
+    .box { animation: fu .35s ease both; }
+    .row, .post { animation: fu .3s ease both; animation-delay: calc(var(--i, 0) * 35ms); }
+    .row, .rx, .pager a { transition: background-color .2s, transform .15s; }
+    .rx:active { transform: scale(.92); }
+    .rx.me { animation: pop .25s ease; }
+    @media (hover: hover) { .row:hover { transform: translateX(3px); } .fg img:hover { transform: scale(1.03); } }
+    .ico { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; background: rgba(255,122,162,.14); color: var(--red); flex-shrink: 0; }
+    .th { width: 46px; height: 46px; object-fit: cover; border-radius: 8px; flex-shrink: 0; border: 1px solid var(--border); }
+    .fg { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .fg img { height: 130px; max-width: 100%; border-radius: 8px; border: 1px solid var(--border); cursor: zoom-in; object-fit: cover; transition: transform .2s; }
+    .fp { margin-top: 10px; }
+    .fp .prev { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .fp .pv { position: relative; animation: fu .25s ease both; }
+    .fp .pv img { width: 78px; height: 78px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+    .fp .pv button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; border: none; background: var(--red); color: #fff; font-size: 12px; line-height: 1; cursor: pointer; }
+    .lb { position: fixed; inset: 0; background: rgba(0,0,0,.82); display: none; align-items: center; justify-content: center; z-index: 200; cursor: zoom-out; padding: 14px; }
+    .lb.open { display: flex; animation: fin .2s ease; }
+    .lb img { max-width: 100%; max-height: 100%; border-radius: 8px; }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+    @media (max-width: 640px) { .post { flex-direction: column; } .side { width: auto; display: flex; gap: 10px; align-items: center; text-align: left; border-right: none; border-bottom: 1px solid var(--border); } .side .ava { margin: 0; width: 38px; height: 38px; font-size: 13px; } .last, .num.hp { display: none; } .fg img { height: 100px; } .side .lbls { justify-content: flex-start; } .side .bio { display: none; } }
+  </style>
+</head>
+<body>
+<div id="navbar-mount"></div>
+<div id="app"></div>
+<div class="lb" id="lb"><img id="lb-img" alt=""></div>
+
+<script src="app.js"></script>
+<script>
+  const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const F = (aksi, o = {}) => `/api/auth-login?aksi=${aksi}` + Object.entries(o).map(([k, v]) => `&${k}=${encodeURIComponent(v)}`).join("");
+  const POST = (aksi, body) => api(F(aksi), { method: "POST", body: JSON.stringify(body) });
+  const RX = { suka: "Suka", cinta: "Cinta", haha: "Lucu", wow: "Wow", sedih: "Sedih" };
+  // Ikon SVG kecil (tanpa emoji, tanpa file gambar tambahan)
+  const IC = {
+    pengumuman: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+    saran: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.7.7 1 1.5 1 2.5h6c0-1 .3-1.8 1-2.5A6 6 0 0 0 12 3z"/>',
+    kritik: '<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>',
+    tanya: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.7M12 17h.01"/>',
+    umum: '<path d="M4 5h16v11H9l-5 4z"/>',
+    pin: '<path d="M9 4h6l-1 6 3 3H7l3-3zM12 13v8"/>',
+    kunci: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    cari: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  };
+  const svg = (k, n = 22) => `<svg width="${n}" height="${n}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${IC[k] || IC.umum}</svg>`;
+  // Cloudinary: minta versi kecil/ringan (hemat data), aslinya cuma dibuka pas di-zoom.
+  const cld = (u, t) => String(u).includes("/upload/") ? String(u).replace("/upload/", `/upload/${t}/`) : u;
+  const aman = (u) => String(u).startsWith("https://");
+  const $ = (id) => document.getElementById(id);
+  const app = $("app");
+  const waktu = (iso) => { try { return new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (e) { return ""; } };
+  const tgl = (iso) => { try { return new Date(iso).toLocaleDateString("id-ID", { month: "short", year: "numeric" }); } catch (e) { return "-"; } };
+  const rel = (iso) => { const s = (Date.now() - new Date(iso).getTime()) / 1000; if (!isFinite(s)) return ""; if (s < 60) return "baru saja"; if (s < 3600) return Math.floor(s / 60) + " mnt lalu"; if (s < 86400) return Math.floor(s / 3600) + " jam lalu"; if (s < 86400 * 7) return Math.floor(s / 86400) + " hari lalu"; return waktu(iso); };
+  const feed = (t) => `<div class="feed"><div class="ico" data-k="${esc(t.kat)}">${svg(t.pin ? "pin" : t.kat, 20)}</div><div class="fm"><a class="ft" href="#/t/${esc(t.id)}">${esc(t.judul)}</a><div class="fs">${esc(t.katNama)} · ${esc(t.nama)} · ${rel(t.tanggal)}</div></div><span class="chip" title="balasan">${t.balasan}</span></div>`;
+  const ava = (nama, url, cls = "") => `<div class="ava ${cls}" ${url && String(url).startsWith("https://") ? `style="background-image:url('${esc(url)}')"` : ""}>${url ? "" : esc((nama || "?").slice(0, 2).toUpperCase())}</div>`;
+
+  // ---------- Upload foto (dikompres di browser dulu biar ringan) ----------
+  const fotoState = {};
+  function kompres(file, maxDim = 1280) {
+    return new Promise((ok, no) => {
+      const u = URL.createObjectURL(file), im = new Image();
+      im.onload = () => {
+        const r = Math.min(1, maxDim / Math.max(im.width, im.height)), c = document.createElement("canvas");
+        c.width = Math.round(im.width * r); c.height = Math.round(im.height * r);
+        c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        let q = 0.75, d = c.toDataURL("image/jpeg", q);
+        while (d.length * 0.75 > 400 * 1024 && q > 0.35) { q -= 0.1; d = c.toDataURL("image/jpeg", q); }
+        ok(d);
+      };
+      im.onerror = () => { URL.revokeObjectURL(u); no(new Error("Gagal memuat foto.")); };
+      im.src = u;
+    });
+  }
+  function picker(id) {
+    fotoState[id] = [];
+    return `<div class="fp" id="fp-${id}"><label class="btn btn-secondary" style="display:inline-block;cursor:pointer">Tambah Foto
+      <input type="file" accept="image/*" multiple style="display:none"></label> <span class="sub">maks. 3 foto</span><div class="prev"></div></div>`;
+  }
+  function pasangPicker(id) {
+    const box = $("fp-" + id), inp = box.querySelector("input"), prev = box.querySelector(".prev");
+    const gambar = () => {
+      prev.innerHTML = fotoState[id].map((d, i) => `<div class="pv"><img src="${d}" alt=""><button type="button" data-x="${i}">x</button></div>`).join("");
+      prev.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { fotoState[id].splice(+b.dataset.x, 1); gambar(); }));
+    };
+    inp.addEventListener("change", async () => {
+      const lbl = box.querySelector("label"); lbl.style.opacity = ".6";
+      for (const f of Array.from(inp.files)) {
+        if (fotoState[id].length >= 3) break;
+        try { fotoState[id].push(await kompres(f)); } catch (e) { alert(e.message); }
+      }
+      inp.value = ""; lbl.style.opacity = ""; gambar();
+    });
+  }
+  function fotoHtml(list) {
+    const l = (list || []).filter(aman);
+    return l.length ? `<div class="fg">${l.map((u) => `<img loading="lazy" src="${esc(cld(u, "w_600,q_auto,f_auto"))}" data-full="${esc(cld(u, "w_1600,q_auto"))}" alt="foto">`).join("")}</div>` : "";
+  }
+  function pasangLightbox() {
+    document.querySelectorAll(".fg img").forEach((im) => im.addEventListener("click", () => { $("lb-img").src = im.dataset.full; $("lb").classList.add("open"); }));
+  }
+
+  // BBCode ringan: [b] [i] [u] [s] [quote=Nama] + link otomatis. Escape HTML DULU, baru diubah jadi tag aman.
+  function bb(t) {
+    let s = esc(t);
+    ["b", "i", "u", "s"].forEach((k) => { s = s.replace(new RegExp(`\\[${k}\\]([\\s\\S]*?)\\[\\/${k}\\]`, "g"), `<${k}>$1</${k}>`); });
+    for (let i = 0; i < 3; i++) s = s.replace(/\[quote=([^\]]{1,40})\]([\s\S]*?)\[\/quote\]/g, '<blockquote><cite>$1 menulis:</cite>$2</blockquote>');
+    s = s.replace(/(^|[\s>])(https?:\/\/[^\s<]+)/g, '$1<a href="$2" target="_blank" rel="noopener nofollow">$2</a>');
+    return s.replace(/\n/g, "<br>");
+  }
+  function pager(hal, total, base) {
+    if (total <= 1) return "";
+    const a = [];
+    for (let i = 1; i <= total; i++) if (i === 1 || i === total || Math.abs(i - hal) <= 2) a.push(i);
+    let out = "", prev = 0;
+    a.forEach((i) => { if (i - prev > 1) out += "<span>…</span>"; out += i === hal ? `<span class="cur">${i}</span>` : `<a href="${base}h=${i}">${i}</a>`; prev = i; });
+    return `<div class="pager">${hal > 1 ? `<a href="${base}h=${hal - 1}">‹</a>` : ""}${out}${hal < total ? `<a href="${base}h=${hal + 1}">›</a>` : ""}</div>`;
+  }
+  function editor(id, ph) {
+    return `<div class="edtb" data-for="${id}">
+      <button type="button" data-t="b"><b>B</b></button><button type="button" data-t="i"><i>I</i></button>
+      <button type="button" data-t="u"><u>U</u></button><button type="button" data-t="s"><s>S</s></button>
+      <button type="button" data-t="quote">Kutip</button></div>
+      <textarea id="${id}" maxlength="5000" placeholder="${ph}" style="min-height:110px"></textarea>`;
+  }
+  function pasangEditor() {
+    document.querySelectorAll(".edtb").forEach((bar) => bar.addEventListener("click", (e) => {
+      const t = e.target.closest("button")?.dataset.t; if (!t) return;
+      const ta = $(bar.dataset.for), a = ta.selectionStart, z = ta.selectionEnd, sel = ta.value.slice(a, z);
+      const open = t === "quote" ? "[quote=Nama]" : `[${t}]`, close = t === "quote" ? "[/quote]" : `[/${t}]`;
+      ta.setRangeText(open + sel + close, a, z, "end"); ta.focus();
+    }));
+  }
+
+  // ---------- Halaman: Beranda forum ----------
+  async function home() {
+    const d = await api(F("forum-home"));
+    app.innerHTML = `
+      <div class="crumb"><b>Forum</b></div>
+      <div class="box"><div class="box-h"><span>Forum Kepolisian Nexotis</span>
+        <form id="cari-f" style="display:flex;gap:6px"><input type="text" id="cari-q" placeholder="cari topik..." style="width:160px"><button class="btn btn-primary">Cari</button></form></div>
+        ${d.kategori.map((k, i) => `
+        <div class="row" style="--i:${i}">
+          <div class="ico" data-k="${k.id}">${svg(k.id)}</div>
+          <div class="main"><a class="t" href="#/k/${k.id}">${esc(k.nama)}</a><div class="sub">${esc(k.desk)}${k.hanyaHC ? " · <span class=tag>HC only</span>" : ""}</div></div>
+          <div class="num hp"><b>${k.topik}</b>topik</div><div class="num hp"><b>${k.post}</b>post</div>
+          <div class="last">${k.terakhir ? `<a href="#/t/${k.terakhir.id}" style="color:var(--text);font-weight:600;text-decoration:none">${esc(k.terakhir.judul.slice(0, 32))}</a><div class="sub">${esc(k.terakhir.nama)} · ${waktu(k.terakhir.tanggal)}</div>` : `<span class="sub">Belum ada topik</span>`}</div>
+        </div>`).join("")}</div>
+      <div class="cols">
+        <div class="panel"><div class="panel-h"><span>Aktivitas Terbaru</span></div>${d.aktivitas && d.aktivitas.length ? d.aktivitas.map(feed).join("") : `<div class="kosong">Belum ada aktivitas.</div>`}</div>
+        <div class="panel"><div class="panel-h"><span>Paling Banyak Dibaca</span></div>${d.populer && d.populer.length ? d.populer.map(feed).join("") : `<div class="kosong">Belum ada topik populer.</div>`}</div>
+      </div>
+      <div class="box"><div class="box-h">Statistik</div><div class="pad" style="font-size:13px;display:flex;gap:24px;flex-wrap:wrap">
+        <span><b>${d.stat.topik}</b> topik</span><span><b>${d.stat.post}</b> post</span><span><b>${d.stat.warga}</b> warga terdaftar</span></div></div>`;
+    $("cari-f").addEventListener("submit", (e) => { e.preventDefault(); location.hash = `#/k/semua?q=${encodeURIComponent($("cari-q").value)}`; });
+  }
+
+  // ---------- Halaman: daftar topik ----------
+  async function kategori(id, p) {
+    const hal = p.get("h") || 1, urut = p.get("u") || "aktif", kata = p.get("q") || "";
+    const d = await api(F("forum-topik-list", { kat: id, hal, urut, q: kata }));
+    const base = `#/k/${id}?u=${urut}&q=${encodeURIComponent(kata)}&`;
+    app.innerHTML = `
+      <div class="crumb"><a href="#/">Forum</a> › <b>${esc(d.kat.nama)}</b></div>
+      <div class="box"><div class="box-h"><span>${esc(d.kat.nama)} <small style="font-weight:400;color:var(--muted)">(${d.total} topik)</small></span>
+        ${d.kat.bolehBuat ? `<button class="btn btn-primary" id="btn-baru">Topik Baru</button>` : ""}</div>
+        ${d.kat.bolehBuat ? `<div class="pad" id="baru" style="display:none">
+          <div class="form-group"><label>Judul</label><input type="text" id="n-judul" maxlength="100"></div>
+          <div class="form-group"><label>Isi</label>${editor("n-isi", "tulis isi topik...")}${picker("n")}</div>
+          <div class="error-msg" id="n-err"></div><button class="btn btn-primary" id="n-kirim">Posting Topik</button></div>` : ""}
+        <form class="tools" id="filter-f">
+          <input type="text" id="f-q" value="${esc(kata)}" placeholder="cari judul / isi...">
+          <select id="f-u"><option value="aktif">Aktivitas terbaru</option><option value="baru">Topik terbaru</option><option value="populer">Terpopuler</option></select>
+          <button class="btn btn-secondary">Terapkan</button></form>
+        ${d.topik.length ? d.topik.map((t, i) => `
+        <div class="row" style="--i:${i}">
+          ${t.thumb && aman(t.thumb) ? `<img class="th" loading="lazy" src="${esc(cld(t.thumb, "c_fill,w_96,h_96,q_auto,f_auto"))}" alt="">` : `<div class="ico" data-k="${esc(t.kat)}">${svg(t.pin ? "pin" : t.kunci ? "kunci" : t.kat)}</div>`}
+          <div class="main"><a class="t" href="#/t/${t.id}">${esc(t.judul)}</a>
+            <div class="sub">${t.pin ? `<span class="tag">Pin</span>` : ""}${id === "semua" ? `<span class="tag">${esc(t.kat)}</span>` : ""}${t.kunci ? `<span class="tag">Dikunci</span>` : ""}oleh ${esc(t.penulisNama)}, ${waktu(t.tanggal)}</div></div>
+          <div class="num hp"><b>${t.balasan}</b>balasan</div><div class="num hp"><b>${t.views}</b>dilihat</div>
+          <div class="last">${esc(t.terakhir.nama)}<div class="sub">${waktu(t.terakhir.tanggal)}</div></div>
+        </div>`).join("") : `<div class="pad sub">Tidak ada topik.</div>`}
+        ${pager(d.hal, d.halTotal, base)}</div>`;
+    $("f-u").value = urut;
+    $("filter-f").addEventListener("submit", (e) => { e.preventDefault(); location.hash = `#/k/${id}?u=${$("f-u").value}&q=${encodeURIComponent($("f-q").value)}`; });
+    if (d.kat.bolehBuat) {
+      pasangEditor(); pasangPicker("n");
+      $("btn-baru").addEventListener("click", () => { const b = $("baru"); b.style.display = b.style.display === "none" ? "block" : "none"; });
+      $("n-kirim").addEventListener("click", async () => {
+        $("n-err").textContent = ""; $("n-kirim").disabled = true;
+        try { const r = await POST("forum-buat", { kat: id, judul: $("n-judul").value, isi: $("n-isi").value, foto: fotoState.n }); location.hash = `#/t/${r.id}`; }
+        catch (e) { $("n-err").textContent = e.message; $("n-kirim").disabled = false; }
+      });
+    }
+  }
+
+  // ---------- Halaman: topik + post ----------
+  const rawPosts = {};
+  async function topik(id, p) {
+    const d = await api(F("forum-topik", { id, hal: p.get("h") || 1 }));
+    const t = d.topik, base = `#/t/${id}?`;
+    d.posts.forEach((x) => { rawPosts[x.id] = x; });
+    app.innerHTML = `
+      <div class="crumb"><a href="#/">Forum</a> › <a href="#/k/${t.kat}">${esc(t.katNama)}</a> › <b>${esc(t.judul)}</b></div>
+      <div class="box"><div class="box-h"><span>${t.pin ? `<span class="tag">Pin</span>` : ""}${t.kunci ? `<span class="tag">Dikunci</span>` : ""}${esc(t.judul)}</span>
+        <span style="font-weight:400;font-size:11px;color:var(--muted)">${t.balasan} balasan · ${t.views} dilihat</span></div>
+        ${t.bolehKelola ? `<div class="tools">
+          <button class="btn btn-secondary" data-mod="pin">${t.pin ? "Lepas Pin" : "Pin Topik"}</button>
+          <button class="btn btn-secondary" data-mod="kunci">${t.kunci ? "Buka Kunci" : "Kunci Topik"}</button>
+          <select id="m-kat">${d.kategori.map((k) => `<option value="${k.id}" ${k.id === t.kat ? "selected" : ""}>${esc(k.nama)}</option>`).join("")}</select>
+          <button class="btn btn-secondary" id="m-pindah">Pindahkan</button></div>` : ""}
+        ${d.posts.map((x, i) => `
+        <div class="post" id="p-${x.id}" style="--i:${i}">
+          <div class="side"><a href="#/u/${encodeURIComponent(x.penulisId)}" style="display:block">${ava(x.penulisNama, x.penulisAvatar, "")}</a><div><a class="nm" href="#/u/${encodeURIComponent(x.penulisId)}">${esc(x.penulisNama)}</a><div class="lbls">${renderLabels(x.labels, true)}</div>${x.bio ? `<div class="bio">${esc(x.bio)}</div>` : ""}
+            <div style="margin-top:6px">${x.sejak ? `Sejak ${tgl(x.sejak)}<br>` : ""}${x.jumlahPost} post</div></div></div>
+          <div class="body"><div class="meta"><span>${waktu(x.tanggal)}${x.edit ? ` · diedit ${waktu(x.edit)}` : ""}</span><span>#${x.no}</span></div>
+            <div class="content" id="c-${x.id}">${bb(x.isi)}</div>${fotoHtml(x.foto)}
+            <div class="acts">
+              ${Object.keys(RX).map((k) => `<button class="rx ${x.sayaReaksi === k ? "me" : ""}" data-rx="${k}" data-p="${x.id}">${RX[k]}${x.reaksi[k] ? `<small>${x.reaksi[k]}</small>` : ""}</button>`).join("")}
+              <span style="flex:1"></span>
+              ${t.bolehBalas ? `<button class="lnk" data-quote="${x.id}">Kutip</button>` : ""}
+              ${x.bolehEdit ? `<button class="lnk" data-edit="${x.id}">Edit</button>` : ""}
+              ${x.bolehHapus ? `<button class="lnk" data-del="${x.id}">Hapus</button>` : ""}
+              ${x.no === 1 && t.bolehHapus ? `<button class="lnk" data-deltopik="1">Hapus Topik</button>` : ""}
+            </div></div></div>`).join("")}
+        ${pager(d.hal, d.halTotal, base)}</div>
+      <div class="box" id="balas-box"><div class="box-h">Balas Topik</div><div class="pad">
+        ${t.bolehBalas ? `${editor("r-isi", "tulis balasan...")}${picker("r")}<div class="error-msg" id="r-err"></div><button class="btn btn-primary" id="r-kirim">Kirim Balasan</button>` : `<div class="sub">Topik ini dikunci.</div>`}</div></div>`;
+
+    pasangEditor(); pasangLightbox(); if (t.bolehBalas) pasangPicker("r");
+    document.querySelectorAll("[data-mod]").forEach((b) => b.addEventListener("click", () => aksi(() => POST("forum-mod", { id, op: b.dataset.mod }))));
+    if ($("m-pindah")) $("m-pindah").addEventListener("click", () => aksi(() => POST("forum-mod", { id, op: "pindah", kat: $("m-kat").value })));
+    document.querySelectorAll("[data-rx]").forEach((b) => b.addEventListener("click", () => aksi(() => POST("forum-reaksi", { id, postId: b.dataset.p, reaksi: b.dataset.rx }))));
+    document.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => confirm("Hapus post ini?") && aksi(() => POST("forum-hapus", { id, postId: b.dataset.del }))));
+    document.querySelectorAll("[data-deltopik]").forEach((b) => b.addEventListener("click", async () => {
+      if (!confirm("Hapus topik ini beserta semua balasannya?")) return;
+      try { await POST("forum-hapus", { id }); location.hash = `#/k/${t.kat}`; } catch (e) { alert(e.message); }
+    }));
+    document.querySelectorAll("[data-quote]").forEach((b) => b.addEventListener("click", () => {
+      const x = rawPosts[b.dataset.quote], ta = $("r-isi");
+      ta.value += `[quote=${x.penulisNama.replace(/[\]\[]/g, "")}]${x.isi.replace(/\[quote=[^\]]*\][\s\S]*?\[\/quote\]/g, "").trim()}[/quote]\n`;
+      $("balas-box").scrollIntoView({ behavior: "smooth" }); ta.focus();
+    }));
+    document.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => {
+      const x = rawPosts[b.dataset.edit], c = $("c-" + x.id);
+      c.innerHTML = `<textarea id="e-${x.id}" maxlength="5000" style="min-height:100px">${esc(x.isi)}</textarea>
+        <div style="margin-top:6px"><button class="btn btn-primary" id="es-${x.id}">Simpan</button> <button class="btn btn-secondary" id="eb-${x.id}">Batal</button></div>`;
+      $("eb-" + x.id).addEventListener("click", () => { c.innerHTML = bb(x.isi); });
+      $("es-" + x.id).addEventListener("click", () => aksi(() => POST("forum-edit", { id, postId: x.id, isi: $("e-" + x.id).value })));
+    }));
+    if (t.bolehBalas) $("r-kirim").addEventListener("click", async () => {
+      $("r-err").textContent = ""; $("r-kirim").disabled = true;
+      try { const r = await POST("forum-balas", { id, isi: $("r-isi").value, foto: fotoState.r }); location.hash = `#/t/${id}?h=${r.halTotal}`; if (+(p.get("h") || 1) === r.halTotal) route(true); }
+      catch (e) { $("r-err").textContent = e.message; $("r-kirim").disabled = false; }
+    });
+  }
+  // ---------- Halaman: profil penulis ----------
+  async function profil(id) {
+    const d = await api(F("forum-profil", { id }));
+    app.innerHTML = `
+      <div class="crumb"><a href="#/">Forum</a> › <b>${esc(d.nama)}</b></div>
+      <div class="hero">
+        <div class="hero-banner" ${d.banner && aman(d.banner) ? `style="background-image:url('${esc(d.banner)}')"` : ""}></div>
+        <div class="hero-body">
+          ${ava(d.nama, d.avatar, "hero-ava")}
+          <div class="hero-main">
+            <div class="hero-name">${esc(d.nama)}</div>
+            <div class="lbls">${renderLabels(d.labels)}</div>
+            <p class="hero-bio ${d.bio ? "" : "kosong"}">${d.bio ? esc(d.bio) : "Belum ada bio."}</p>
+            <div class="hero-meta">${d.sejak ? `Bergabung ${tgl(d.sejak)} · ` : ""}${d.jumlahPost} post · ${d.jumlahTopik} topik</div>
+          </div>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-h"><span>Topik oleh ${esc(d.nama)}</span></div>
+        ${d.topik.length ? d.topik.map((t) => feed({ ...t, katNama: t.kat, nama: t.terakhir.nama, tanggal: t.terakhir.tanggal })).join("") : `<div class="kosong">Belum bikin topik.</div>`}</div>`;
+  }
+  async function aksi(fn) { try { await fn(); route(true); } catch (e) { alert(e.message); } }
+
+  // ---------- Router ----------
+  async function route(senyap) {
+    const [path, qs] = (location.hash.slice(1) || "/").split("?"), p = new URLSearchParams(qs || ""), seg = path.split("/").filter(Boolean);
+    const y = window.scrollY;
+    if (!senyap) app.innerHTML = `<div class="sub" style="text-align:center;padding:30px">Memuat...</div>`;
+    try {
+      if (seg[0] === "k" && seg[1]) await kategori(seg[1], p);
+      else if (seg[0] === "t" && seg[1]) await topik(seg[1], p);
+      else if (seg[0] === "u" && seg[1]) await profil(decodeURIComponent(seg[1]));
+      else await home();
+      if (senyap) window.scrollTo(0, y); else if (seg[0] !== "t") window.scrollTo(0, 0);
+    } catch (e) { app.innerHTML = `<div class="box"><div class="pad error-msg">${esc(e.message)}</div></div>`; }
+  }
+  window.addEventListener("hashchange", () => route());
+  $("lb").addEventListener("click", () => $("lb").classList.remove("open"));
+
+  (async () => {
+    try { renderNavbar("forum", (await api("/api/me")).user); }   // anggota: navbar lengkap
+    catch (e) {
+      let wg;
+      try { wg = (await api(F("warga-me"))).warga; } catch (e2) { location.href = "index.html"; return; }
+      renderWargaNavbar("forum", wg);
+    }
+    route();
+  })();
+</script>
+</body>
+</html>

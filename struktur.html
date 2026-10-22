@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Struktur Anggota - Kepolisian Nexotis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="navbar-mount"></div>
+
+  <div class="container">
+    <div class="card">
+      <h2>Struktur Anggota</h2>
+      <div class="sub">List roster struktur anggota kepolisian.</div>
+      <div class="form-group" style="margin-bottom:0">
+        <input type="text" id="struktur-search" placeholder="Cari nama atau username...">
+      </div>
+    </div>
+
+    <div id="struktur-list"></div>
+    <div class="empty" id="struktur-empty" style="display:none">Tidak ada anggota yang cocok dengan pencarian.</div>
+  </div>
+
+  <!-- Modal lihat profil anggota lain -->
+  <div class="modal-overlay" id="profile-view-modal">
+    <div class="modal-box" style="max-width:340px">
+      <div class="profile-view-avatar" id="pv-avatar"></div>
+      <h2 id="pv-nama" style="margin-bottom:2px">-</h2>
+      <div class="sub" id="pv-username" style="margin-bottom:10px">@username</div>
+      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">
+        <span class="badge rank" id="pv-pangkat">-</span>
+        <span class="badge diterima" id="pv-hc" style="display:none;animation:none">High Command</span>
+      </div>
+      <button class="btn btn-secondary" id="pv-close">Tutup</button>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  let user, members = [];
+
+  (async function init() {
+    user = await requireAuth();
+    if (!user) return;
+    renderNavbar("struktur", user);
+    await loadStruktur();
+  })();
+
+  async function loadStruktur() {
+    const data = await api("/api/me?view=struktur");
+    members = data.members;
+    renderStruktur(members);
+  }
+
+  function initialsOf(m) {
+    const label = (m.namaKarakter || m.username || "?").trim();
+    return label.slice(0, 2).toUpperCase();
+  }
+
+  function renderStruktur(list) {
+    const q = document.getElementById("struktur-search").value.trim().toLowerCase();
+    const filtered = q
+      ? list.filter((m) =>
+          m.username.toLowerCase().includes(q) ||
+          (m.namaKarakter || "").toLowerCase().includes(q) ||
+          m.pangkat.toLowerCase().includes(q))
+      : list;
+
+    const container = document.getElementById("struktur-list");
+    const emptyEl = document.getElementById("struktur-empty");
+
+    if (filtered.length === 0) {
+      container.innerHTML = "";
+      emptyEl.style.display = "block";
+      return;
+    }
+    emptyEl.style.display = "none";
+
+    // Kelompokkan berdasarkan urutan PANGKAT_LIST (tertinggi -> terendah).
+    const groups = new Map();
+    PANGKAT_LIST.forEach((p) => groups.set(p, []));
+    filtered.forEach((m) => {
+      if (!groups.has(m.pangkat)) groups.set(m.pangkat, []);
+      groups.get(m.pangkat).push(m);
+    });
+
+    let html = "";
+    for (const [pangkat, anggota] of groups) {
+      if (anggota.length === 0) continue;
+      html += `
+        <div class="rank-group">
+          <div class="rank-group-title">${pangkat} <span class="count">${anggota.length} anggota</span></div>
+          <div class="member-grid">
+            ${anggota.map((m) => memberCardHtml(m)).join("")}
+          </div>
+        </div>`;
+    }
+    container.innerHTML = html;
+
+    // Pasang background foto (kalau ada) & click handler per kartu.
+    filtered.forEach((m) => {
+      const el = document.getElementById(`member-${m.id}`);
+      if (!el) return;
+      if (m.avatar) {
+        const av = el.querySelector(".avatar-circle");
+        av.style.backgroundImage = `url('${m.avatar}')`;
+        av.textContent = "";
+      }
+      el.addEventListener("click", () => openProfileView(m));
+    });
+  }
+
+  function memberCardHtml(m) {
+    const nama = m.namaKarakter || m.username;
+    return `
+      <div class="member-card" id="member-${m.id}">
+        <div class="avatar-circle">${initialsOf(m)}</div>
+        <div class="m-name">${nama}</div>
+        <div class="m-username">@${m.username}</div>
+      </div>`;
+  }
+
+  function openProfileView(m) {
+    const avatarEl = document.getElementById("pv-avatar");
+    if (m.avatar) {
+      avatarEl.style.backgroundImage = `url('${m.avatar}')`;
+      avatarEl.textContent = "";
+    } else {
+      avatarEl.style.backgroundImage = "";
+      avatarEl.textContent = initialsOf(m);
+    }
+    document.getElementById("pv-nama").textContent = m.namaKarakter || m.username;
+    document.getElementById("pv-username").textContent = `@${m.username}`;
+    document.getElementById("pv-pangkat").textContent = m.pangkat;
+    document.getElementById("pv-hc").style.display = m.isHighCommand ? "inline-block" : "none";
+    document.getElementById("profile-view-modal").classList.add("open");
+  }
+  document.getElementById("pv-close").addEventListener("click", () => {
+    document.getElementById("profile-view-modal").classList.remove("open");
+  });
+
+  let searchDebounce;
+  document.getElementById("struktur-search").addEventListener("input", () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => renderStruktur(members), 120);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Rekap - Kepolisian Nexotis</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <div id="navbar-mount"></div>
+
+  <div class="container">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2>Panel Rekap (High Command)</h2>
+        <div class="sub">Rekap kehadiran dan kelola akun anggota.</div>
+        <div class="sub" id="periode-label" style="font-size:12px;opacity:.75;margin-top:2px"></div>
+      </div>
+      <button class="btn btn-secondary" id="reset-btn" style="background:#7c2d12;color:#fed7aa">Reset Semua Duty</button>
+    </div>
+
+    <div class="tabs">
+      <button class="btn btn-primary" id="tab-rekap">Rekap Anggota</button>
+      <button class="btn btn-secondary" id="tab-laporan">Verifikasi Laporan</button>
+      <button class="btn btn-secondary" id="tab-promosi">Kenaikan Pangkat</button>
+      <button class="btn btn-secondary" id="tab-pendaftaran">Pendaftaran</button>
+      <button class="btn btn-secondary" id="tab-users">Kelola Anggota</button>
+      <button class="btn btn-secondary" id="tab-iklan">Iklan</button>
+      <button class="btn btn-secondary" id="tab-gaji">Kirim Gaji</button>
+    </div>
+
+    <div class="card" id="panel-rekap">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button class="btn btn-secondary" id="rekap-pdf-btn">📄 Download PDF</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Anggota</th><th>Pangkat</th><th>Jam Kerja</th><th>Hadir</th><th>Izin</th><th>Cuti</th><th>Alpa</th></tr>
+          </thead>
+          <tbody id="rekap-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="panel-laporan" style="display:none">
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Anggota</th><th>Tanggal</th><th>Tipe</th><th>Keterangan</th><th>Bukti</th><th>Status</th><th>Aksi</th></tr>
+          </thead>
+          <tbody id="laporan-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="panel-promosi" style="display:none">
+      <div class="sub" style="margin-bottom:10px">
+        Pengajuan kenaikan pangkat dari anggota yang sudah memenuhi target minggu itu
+        (5x Arrest Record + 30 jam duty yang sudah diterima HC). Pangkat baru naik
+        BENERAN kalau kamu klik "Terima".
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Anggota</th><th>Pangkat Saat Ini</th><th>Pangkat Tujuan</th><th>Arrest</th><th>Jam Duty</th><th>Diajukan</th><th>Status</th><th>Aksi</th></tr>
+          </thead>
+          <tbody id="promosi-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="panel-pendaftaran" style="display:none">
+      <div class="sub" style="margin-bottom:10px">Akun yang baru daftar sendiri (belum di-approve) muncul di sini.</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Username</th><th>Nama Karakter</th><th>Aksi</th></tr></thead>
+          <tbody id="pendaftaran-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="panel-users" style="display:none">
+      <div class="card">
+        <h2>Tambah Anggota Baru</h2>
+        <div class="form-row">
+          <div class="form-group"><label for="nu-username">Username</label><input type="text" id="nu-username"></div>
+          <div class="form-group"><label for="nu-password">Password</label><input type="text" id="nu-password" placeholder="minimal 6 karakter"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="nu-pangkat">Pangkat</label>
+            <select id="nu-pangkat"></select>
+          </div>
+          <div class="form-group">
+            <label for="nu-access">Akses</label>
+            <select id="nu-access">
+              <option value="false">Anggota Biasa</option>
+              <option value="true">High Command</option>
+            </select>
+          </div>
+        </div>
+        <div class="error-msg" id="nu-error"></div>
+        <button class="btn btn-primary" id="nu-submit">Tambah Anggota</button>
+      </div>
+
+      <div class="card">
+        <h2>Daftar Anggota</h2>
+        <div class="bulk-actions">
+          <div class="sub" id="bulk-count-label">Belum ada yang dipilih.</div>
+          <button class="btn btn-secondary" id="bulk-delete-btn" style="background:#7c2d12;color:#fed7aa" disabled>🗑️ Hapus Terpilih</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th class="checkbox-cell"><input type="checkbox" class="select-all-check" id="select-all-users"></th>
+                <th>Username</th><th>Pangkat</th><th>Akses</th><th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="users-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-iklan" style="display:none">
+      <div class="card">
+        <h2>Tambah Iklan</h2>
+        <div class="sub" style="margin-bottom:10px">Iklan (foto + teks) yang kamu tambahkan di sini bakal tampil di Dashboard semua anggota.</div>
+
+        <div class="form-group">
+          <label>Foto Iklan (opsional)</label>
+          <div id="iklan-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s ease,background .2s ease;">
+            <div style="font-size:24px;margin-bottom:6px">🖼️</div>
+            <div style="font-size:12px;color:var(--muted)">Tarik &amp; lepas foto di sini, atau klik untuk pilih 1 foto</div>
+            <input type="file" id="iklan-foto" accept="image/*" style="display:none">
+          </div>
+          <div id="iklan-foto-preview" style="margin-top:10px"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="iklan-teks">Teks Iklan</label>
+          <textarea id="iklan-teks" placeholder="Tulis isi iklan / pengumuman di sini..."></textarea>
+        </div>
+
+        <div class="error-msg" id="iklan-error"></div>
+        <button class="btn btn-primary" id="iklan-submit">Tambah Iklan</button>
+      </div>
+
+      <div class="card">
+        <h2>Daftar Iklan Aktif</h2>
+        <div id="iklan-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+    </div>
+
+    <div id="panel-gaji" style="display:none">
+      <div class="card">
+        <h2>Reset Gaji</h2>
+        <div class="sub" style="margin-bottom:10px">
+          Reset status klaim gaji minggu ini buat SEMUA anggota, jadi mereka bisa klaim lagi
+          walau minggu ini udah pernah klaim. Riwayat gaji & data absensi TIDAK dihapus.
+        </div>
+        <button class="btn btn-secondary" id="reset-gaji-btn" style="background:#7c2d12;color:#fed7aa">Reset Gaji Semua Anggota</button>
+      </div>
+
+      <div class="card">
+        <h2>Kirim Logs Gaji (Custom)</h2>
+        <div class="sub" style="margin-bottom:10px">
+          Semua field bebas diisi sendiri — buat kasus di luar klaim mingguan biasa (bonus, koreksi, dll).
+          Ini CUMA ngirim log ke Discord, nggak mengubah data/saldo anggota mana pun.
+        </div>
+
+        <div class="form-group">
+          <label for="gm-nama">Nama</label>
+          <input type="text" id="gm-nama" placeholder="Nama petugas">
+        </div>
+
+        <div class="form-group">
+          <label for="gm-pangkat">Pangkat</label>
+          <input type="text" id="gm-pangkat" list="gm-pangkat-list" placeholder="Misal: PO III">
+          <datalist id="gm-pangkat-list"></datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="gm-jumlah">Jumlah</label>
+          <input type="text" id="gm-jumlah" placeholder="Misal: $550.000 atau 550 (bonus)">
+        </div>
+
+        <div class="form-group">
+          <label for="gm-diberikan">Diberikan oleh</label>
+          <input type="text" id="gm-diberikan" placeholder="@username">
+        </div>
+
+        <div class="error-msg" id="gm-error"></div>
+        <button class="btn btn-primary" id="gm-submit">Kirim ke Discord</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="foto-modal">
+    <div class="modal-box">
+      <div id="modal-zoom-wrap" style="display:none;text-align:center"></div>
+      <div id="modal-img-list" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:10px"></div>
+      <button class="btn btn-secondary" id="modal-close">Tutup</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal-box">
+      <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+      <div style="font-weight:700;margin-bottom:6px">Reset semua duty?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+        Ini akan menghapus SELURUH riwayat absensi semua anggota (hadir/izin/cuti) tanpa bisa dibatalkan.
+        Biasanya dipakai untuk mulai periode duty minggu baru.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-secondary" id="confirm-cancel">Batal</button>
+        <button class="btn btn-primary" id="confirm-ok" style="background:#7c2d12">Ya, Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="confirm-gaji-modal">
+    <div class="modal-box">
+      <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+      <div style="font-weight:700;margin-bottom:6px">Reset gaji semua anggota?</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
+        Semua anggota bisa klaim gaji lagi mulai sekarang, walau minggu ini udah pernah klaim.
+        Riwayat gaji & data absensi TIDAK ikut terhapus.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-secondary" id="confirm-gaji-cancel">Batal</button>
+        <button class="btn btn-primary" id="confirm-gaji-ok" style="background:#7c2d12">Ya, Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal-box" style="text-align:left">
+      <h2 style="margin-bottom:14px">Edit Anggota</h2>
+      <input type="hidden" id="eu-id">
+      <div class="form-group"><label for="eu-pangkat">Pangkat</label><select id="eu-pangkat"></select></div>
+      <div class="form-group">
+        <label for="eu-access">Akses</label>
+        <select id="eu-access"><option value="false">Anggota Biasa</option><option value="true">High Command</option></select>
+      </div>
+      <div class="form-group"><label for="eu-password">Reset Password (opsional)</label><input type="text" id="eu-password" placeholder="kosongkan kalau tidak diubah"></div>
+      <div class="error-msg" id="eu-error"></div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-secondary" id="eu-cancel">Batal</button>
+        <button class="btn btn-primary" id="eu-save">Simpan</button>
+      </div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  let allUsers = [], allAbsensi = [], allIklan = [], allPromosi = [], currentUserId = null, currentUsername = null, periodeMulai = null;
+
+  function fillPangkatSelect(selectEl) {
+    selectEl.innerHTML = PANGKAT_LIST.map((p) => `<option value="${p}">${p}</option>`).join("");
+  }
+  fillPangkatSelect(document.getElementById("nu-pangkat"));
+  fillPangkatSelect(document.getElementById("eu-pangkat"));
+  document.getElementById("nu-pangkat").value = PANGKAT_LIST[PANGKAT_LIST.length - 1];
+
+  document.getElementById("nu-pangkat").addEventListener("change", (e) => {
+    document.getElementById("nu-access").value = String(isPangkatHighCommand(e.target.value));
+  });
+  document.getElementById("eu-pangkat").addEventListener("change", (e) => {
+    document.getElementById("eu-access").value = String(isPangkatHighCommand(e.target.value));
+  });
+
+  (async function init() {
+    const user = await requireAuth();
+    if (!user) return;
+    if (!user.isHighCommand) { window.location.href = "dashboard.html"; return; }
+    currentUserId = user.id;
+    currentUsername = user.username;
+    document.getElementById("gm-diberikan").value = `@${user.username}`;
+    renderNavbar("rekap", user);
+    await refreshAll();
+
+    // Deep-link dari notifikasi Discord (?tab=laporan / ?tab=pendaftaran) —
+    // biar High Command bisa langsung nyampe ke tab yang relevan dari HP
+    // tanpa perlu klik-klik cari tab-nya manual.
+    const tabParam = new URLSearchParams(window.location.search).get("tab");
+    if (tabParam && tabs[tabParam]) switchTab(tabParam);
+  })();
+
+  async function refreshAll() {
+    const data = await api("/api/admin/rekap");
+    allUsers = data.users;
+    allAbsensi = data.absensi;
+    allIklan = data.iklan || [];
+    allPromosi = data.promosi || [];
+    periodeMulai = data.periodeMulai;
+    const periodeLabelEl = document.getElementById("periode-label");
+    if (periodeLabelEl) periodeLabelEl.textContent = `Periode berjalan sejak ${formatTanggal(periodeMulai)} — klik "Reset Semua Duty" untuk mulai periode baru.`;
+    refreshRekap();
+    refreshLaporan();
+    refreshPromosiPanel();
+    refreshUsers();
+    refreshPendaftaran();
+    refreshIklan();
+  }
+
+  const tabs = { rekap: "panel-rekap", laporan: "panel-laporan", promosi: "panel-promosi", pendaftaran: "panel-pendaftaran", users: "panel-users", iklan: "panel-iklan", gaji: "panel-gaji" };
+  function switchTab(active) {
+    Object.entries(tabs).forEach(([key, panelId]) => {
+      document.getElementById(panelId).style.display = key === active ? "block" : "none";
+      document.getElementById(`tab-${key}`).className = key === active ? "btn btn-primary" : "btn btn-secondary";
+    });
+  }
+  document.getElementById("tab-rekap").addEventListener("click", () => switchTab("rekap"));
+  document.getElementById("tab-laporan").addEventListener("click", () => switchTab("laporan"));
+  document.getElementById("tab-promosi").addEventListener("click", () => switchTab("promosi"));
+  document.getElementById("tab-pendaftaran").addEventListener("click", () => switchTab("pendaftaran"));
+  document.getElementById("tab-users").addEventListener("click", () => switchTab("users"));
+  document.getElementById("tab-iklan").addEventListener("click", () => switchTab("iklan"));
+  document.getElementById("tab-gaji").addEventListener("click", () => switchTab("gaji"));
+
+  // Export tabel Rekap Anggota (jam kerja + hadir/izin/cuti/alpa) jadi file PDF,
+  // pakai jsPDF + autoTable yang di-load lewat CDN di <head>.
+  function downloadRekapPdf() {
+    if (!window.jspdf) { alert("Modul PDF belum siap dimuat, coba lagi sebentar."); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const tanggalCetak = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+
+    doc.setFontSize(14);
+    doc.text("Rekap Anggota - Kepolisian Nexotis", 14, 15);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Dicetak: ${tanggalCetak}`, 14, 21);
+
+    const rows = allUsers.map((u) => {
+      const records = allAbsensi.filter((a) => a.userId === u.id);
+      const s = calcStatsFromRecords(records, effectiveMulai(periodeMulai, u.bergabung));
+      return [
+        (u.namaKarakter || u.username) + (u.isHighCommand ? " (HC)" : ""),
+        u.pangkat,
+        s.totalJam.toFixed(2) + " jam",
+        String(s.hadir),
+        String(s.izin),
+        String(s.cuti),
+        String(s.alpa),
+      ];
+    });
+
+    doc.autoTable({
+      startY: 27,
+      head: [["Anggota", "Pangkat", "Jam Kerja", "Hadir", "Izin", "Cuti", "Alpa"]],
+      body: rows,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [30, 41, 59] },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save(`rekap-anggota-${toISO(new Date())}.pdf`);
+  }
+  document.getElementById("rekap-pdf-btn").addEventListener("click", downloadRekapPdf);
+
+  function refreshRekap() {
+    const tbody = document.getElementById("rekap-body");
+    tbody.innerHTML = allUsers.map((u) => {
+      const records = allAbsensi.filter((a) => a.userId === u.id);
+      const s = calcStatsFromRecords(records, effectiveMulai(periodeMulai, u.bergabung));
+      return `<tr>
+        <td>${u.namaKarakter || u.username}${u.isHighCommand ? " (HC)" : ""}</td>
+        <td><span class="badge rank">${u.pangkat}</span></td>
+        <td>${s.totalJam.toFixed(2)} jam</td>
+        <td>${s.hadir}</td><td>${s.izin}</td><td>${s.cuti}</td><td>${s.alpa}</td>
+      </tr>`;
+    }).join("") || `<tr><td colspan="8" class="empty">Belum ada anggota.</td></tr>`;
+  }
+
+  function refreshLaporan() {
+    const tbody = document.getElementById("laporan-body");
+    const rows = [...allAbsensi].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty">Belum ada laporan masuk.</td></tr>`; return; }
+    tbody.innerHTML = rows.map((a) => {
+      const u = allUsers.find((x) => x.id === a.userId);
+      const foto = (Array.isArray(a.foto) && a.foto.length) ? `<button class="btn-link" onclick="showFoto('${a.id}')">Lihat (${a.foto.length})</button>` : "-";
+      const aksi = a.status === "pending"
+        ? `<button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;margin-right:4px" onclick="setStatus('${a.id}','diterima')">Terima</button>
+           <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px" onclick="tolakLaporan('${a.id}')">Tolak</button>`
+        : `<span class="badge ${a.status}">${a.status}</span>`;
+      return `<tr>
+        <td>${u ? (u.namaKarakter || u.username) : "-"}</td>
+        <td>${formatTanggal(a.tanggal)}</td>
+        <td style="text-transform:capitalize">${a.tipe}</td>
+        <td>${a.keterangan || "-"}</td>
+        <td>${foto}</td>
+        <td><span class="badge ${a.status}">${a.status}</span>${a.status === "ditolak" && a.alasan ? `<div style="font-size:10px;color:var(--faint);margin-top:3px">${a.alasan}</div>` : ""}</td>
+        <td>${aksi}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function tolakLaporan(id) {
+    const alasan = prompt("Alasan penolakan (akan ditampilkan ke anggota):", "");
+    if (alasan === null) return; // batal
+    try {
+      await api(`/api/admin/laporan/${id}`, { method: "POST", body: JSON.stringify({ status: "ditolak", alasan }) });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // ====== Kenaikan Pangkat (5x Arrest Record + 30 jam duty per minggu) ======
+  function refreshPromosiPanel() {
+    const tbody = document.getElementById("promosi-body");
+    const rows = [...allPromosi].sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="8" class="empty">Belum ada pengajuan kenaikan pangkat.</td></tr>`; return; }
+    tbody.innerHTML = rows.map((p) => {
+      const u = allUsers.find((x) => x.id === p.userId);
+      const aksi = p.status === "pending"
+        ? `<button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;margin-right:4px" onclick="terimaPromosi('${p.id}')">Terima</button>
+           <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px" onclick="tolakPromosi('${p.id}')">Tolak</button>`
+        : `<span class="badge ${p.status}">${p.status}</span>`;
+      return `<tr>
+        <td>${u ? (u.namaKarakter || u.username) : "-"}</td>
+        <td>${p.pangkatSaat}</td>
+        <td><span class="badge rank">${p.pangkatTarget}</span></td>
+        <td>${p.arrestCount}/5</td>
+        <td>${p.jamDuty}/30 jam</td>
+        <td>${new Date(p.tanggal).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</td>
+        <td><span class="badge ${p.status}">${p.status}</span>${p.status === "ditolak" && p.alasan ? `<div style="font-size:10px;color:var(--faint);margin-top:3px">${p.alasan}</div>` : ""}</td>
+        <td>${aksi}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function terimaPromosi(id) {
+    const p = allPromosi.find((x) => x.id === id);
+    const u = p && allUsers.find((x) => x.id === p.userId);
+    if (!confirm(`Terima kenaikan pangkat ${u ? (u.namaKarakter || u.username) : "anggota ini"} ke "${p ? p.pangkatTarget : "-"}"?`)) return;
+    try {
+      await api("/api/admin/rekap", { method: "POST", body: JSON.stringify({ prosesPromosi: { id, status: "diterima" } }) });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function tolakPromosi(id) {
+    const alasan = prompt("Alasan penolakan (akan ditampilkan ke anggota):", "");
+    if (alasan === null) return; // batal
+    try {
+      await api("/api/admin/rekap", { method: "POST", body: JSON.stringify({ prosesPromosi: { id, status: "ditolak", alasan } }) });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  function refreshPendaftaran() {
+    const tbody = document.getElementById("pendaftaran-body");
+    const pending = (allUsers || []).filter((u) => u.status === "pending");
+    tbody.innerHTML = pending.length
+      ? pending.map((u) => `
+        <tr>
+          <td>${u.username}</td>
+          <td>${u.namaKarakter || "-"}</td>
+          <td style="display:flex;gap:6px">
+            <button class="btn btn-primary" style="padding:5px 10px;font-size:11px" onclick="setujuPendaftaran('${u.id}','${u.username.replace(/'/g, "\\'")}')">Setujui</button>
+            <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px" onclick="tolakPendaftaran('${u.id}','${u.username.replace(/'/g, "\\'")}')">Tolak</button>
+          </td>
+        </tr>`).join("")
+      : `<tr><td colspan="3" class="empty">Tidak ada pendaftaran menunggu approval.</td></tr>`;
+  }
+
+  async function setujuPendaftaran(id, username) {
+    if (!confirm(`Setujui pendaftaran ${username}?`)) return;
+    try {
+      await api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ status: "approved" }) });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function tolakPendaftaran(id, username) {
+    if (!confirm(`Tolak pendaftaran ${username}? Akunnya nggak akan bisa login.`)) return;
+    try {
+      await api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ status: "ditolak" }) });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  const selectedUserIds = new Set();
+
+  function refreshUsers() {
+    // Buang id yang kepilih tapi anggotanya udah nggak ada lagi di data terbaru.
+    const validIds = new Set(allUsers.map((u) => u.id));
+    Array.from(selectedUserIds).forEach((id) => { if (!validIds.has(id)) selectedUserIds.delete(id); });
+
+    const tbody = document.getElementById("users-body");
+    tbody.innerHTML = allUsers.map((u) => `<tr>
+      <td class="checkbox-cell"><input type="checkbox" class="row-check" data-id="${u.id}" ${selectedUserIds.has(u.id) ? "checked" : ""} ${u.id === currentUserId ? "disabled title=\"Nggak bisa hapus akun sendiri\"" : ""}></td>
+      <td>${u.username}</td>
+      <td>${u.pangkat}</td>
+      <td>${u.isHighCommand ? '<span class="badge rank">High Command</span>' : '<span class="badge pending">Anggota</span>'}</td>
+      <td>
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;margin-right:4px" onclick="openEdit('${u.id}')">Edit</button>
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;background:#7c2d12;color:#fed7aa" onclick="deleteUser('${u.id}','${u.username}')">Hapus</button>
+      </td>
+    </tr>`).join("") || `<tr><td colspan="5" class="empty">Belum ada anggota.</td></tr>`;
+
+    tbody.querySelectorAll(".row-check").forEach((cb) => {
+      cb.addEventListener("change", () => {
+        if (cb.checked) selectedUserIds.add(cb.dataset.id); else selectedUserIds.delete(cb.dataset.id);
+        updateBulkUI();
+      });
+    });
+    updateBulkUI();
+  }
+
+  function updateBulkUI() {
+    const count = selectedUserIds.size;
+    const label = document.getElementById("bulk-count-label");
+    const btn = document.getElementById("bulk-delete-btn");
+    label.textContent = count ? `${count} anggota dipilih.` : "Belum ada yang dipilih.";
+    btn.disabled = count === 0;
+
+    const selectAll = document.getElementById("select-all-users");
+    const checkable = allUsers.filter((u) => u.id !== currentUserId);
+    selectAll.checked = checkable.length > 0 && checkable.every((u) => selectedUserIds.has(u.id));
+    selectAll.indeterminate = count > 0 && !selectAll.checked;
+  }
+
+  document.getElementById("select-all-users").addEventListener("change", (e) => {
+    if (e.target.checked) {
+      allUsers.forEach((u) => { if (u.id !== currentUserId) selectedUserIds.add(u.id); });
+    } else {
+      selectedUserIds.clear();
+    }
+    refreshUsers();
+  });
+
+  document.getElementById("bulk-delete-btn").addEventListener("click", async () => {
+    const ids = Array.from(selectedUserIds);
+    if (!ids.length) return;
+    const names = ids.map((id) => allUsers.find((u) => u.id === id)?.username).filter(Boolean);
+    if (!confirm(`Hapus ${ids.length} anggota terpilih (${names.join(", ")})? Aksi ini tidak bisa dibatalkan.`)) return;
+
+    const btn = document.getElementById("bulk-delete-btn");
+    btn.disabled = true; btn.textContent = "Menghapus...";
+    try {
+      for (const id of ids) {
+        await api(`/api/admin/users/${id}`, { method: "DELETE" });
+      }
+      selectedUserIds.clear();
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.textContent = "🗑️ Hapus Terpilih";
+      updateBulkUI();
+    }
+  });
+
+  document.getElementById("nu-submit").addEventListener("click", async () => {
+    const errorEl = document.getElementById("nu-error");
+    errorEl.textContent = "";
+    const username = document.getElementById("nu-username").value.trim();
+    const password = document.getElementById("nu-password").value;
+    const pangkat = document.getElementById("nu-pangkat").value;
+    const isHighCommand = document.getElementById("nu-access").value === "true";
+    if (!username || !password) { errorEl.textContent = "Username & password wajib diisi."; return; }
+
+    const btn = document.getElementById("nu-submit");
+    btn.disabled = true; btn.textContent = "Menambahkan...";
+    try {
+      await api("/api/admin/users", { method: "POST", body: JSON.stringify({ username, password, pangkat, isHighCommand }) });
+      document.getElementById("nu-username").value = "";
+      document.getElementById("nu-password").value = "";
+      document.getElementById("nu-pangkat").value = PANGKAT_LIST[PANGKAT_LIST.length - 1];
+      document.getElementById("nu-access").value = "false";
+      await refreshAll();
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Tambah Anggota";
+    }
+  });
+
+  function openEdit(id) {
+    const u = allUsers.find((x) => x.id === id);
+    if (!u) return;
+    document.getElementById("eu-id").value = u.id;
+    const pangkatSelect = document.getElementById("eu-pangkat");
+    fillPangkatSelect(pangkatSelect);
+    if (!PANGKAT_LIST.includes(u.pangkat)) {
+      const opt = document.createElement("option");
+      opt.value = u.pangkat;
+      opt.textContent = `${u.pangkat} (pangkat lama, tidak ada di daftar resmi)`;
+      pangkatSelect.prepend(opt);
+    }
+    pangkatSelect.value = u.pangkat;
+    document.getElementById("eu-access").value = String(u.isHighCommand);
+    document.getElementById("eu-password").value = "";
+    document.getElementById("eu-error").textContent = "";
+    document.getElementById("edit-modal").classList.add("open");
+  }
+  document.getElementById("eu-cancel").addEventListener("click", () => document.getElementById("edit-modal").classList.remove("open"));
+  document.getElementById("eu-save").addEventListener("click", async () => {
+    const errorEl = document.getElementById("eu-error");
+    errorEl.textContent = "";
+    const id = document.getElementById("eu-id").value;
+    const pangkat = document.getElementById("eu-pangkat").value.trim();
+    const isHighCommand = document.getElementById("eu-access").value === "true";
+    const newPassword = document.getElementById("eu-password").value;
+
+    const btn = document.getElementById("eu-save");
+    btn.disabled = true; btn.textContent = "Menyimpan...";
+    try {
+      await api(`/api/admin/users/${id}`, { method: "PATCH", body: JSON.stringify({ pangkat, isHighCommand, newPassword: newPassword || undefined }) });
+      document.getElementById("edit-modal").classList.remove("open");
+      await refreshAll();
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Simpan";
+    }
+  });
+
+  async function deleteUser(id, username) {
+    if (!confirm(`Hapus anggota "${username}"? Aksi ini tidak bisa dibatalkan.`)) return;
+    try {
+      await api(`/api/admin/users/${id}`, { method: "DELETE" });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  async function setStatus(id, status) {
+    await api(`/api/admin/laporan/${id}`, { method: "POST", body: JSON.stringify({ status }) });
+    await refreshAll();
+  }
+
+  let currentFotoList = [];
+  function showFoto(id) {
+    const rec = allAbsensi.find((a) => a.id === id);
+    if (!rec || !Array.isArray(rec.foto) || !rec.foto.length) return;
+    currentFotoList = rec.foto;
+    renderFotoGallery();
+    document.getElementById("foto-modal").classList.add("open");
+  }
+  function renderFotoGallery() {
+    document.getElementById("modal-zoom-wrap").style.display = "none";
+    const listEl = document.getElementById("modal-img-list");
+    listEl.style.display = "flex";
+    listEl.innerHTML = currentFotoList.map((src, i) =>
+      `<img src="${src}" onclick="zoomFoto(${i})" style="max-width:120px;border-radius:8px;border:1px solid var(--border);cursor:zoom-in">`
+    ).join("");
+  }
+  function zoomFoto(i) {
+    document.getElementById("modal-img-list").style.display = "none";
+    const wrap = document.getElementById("modal-zoom-wrap");
+    wrap.style.display = "block";
+    wrap.innerHTML = `
+      <img src="${currentFotoList[i]}" style="max-width:100%;max-height:65vh;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;cursor:zoom-out" onclick="renderFotoGallery()">
+      <div style="margin-bottom:10px"><button class="btn btn-secondary" onclick="renderFotoGallery()">🔍 Zoom Out</button></div>`;
+  }
+  document.getElementById("modal-close").addEventListener("click", () => document.getElementById("foto-modal").classList.remove("open"));
+
+  document.getElementById("reset-btn").addEventListener("click", () => document.getElementById("confirm-modal").classList.add("open"));
+  document.getElementById("confirm-cancel").addEventListener("click", () => document.getElementById("confirm-modal").classList.remove("open"));
+  document.getElementById("confirm-ok").addEventListener("click", async () => {
+    const btn = document.getElementById("confirm-ok");
+    btn.disabled = true; btn.textContent = "Mereset...";
+    try {
+      await api("/api/admin/reset-all-duty", { method: "POST" });
+      document.getElementById("confirm-modal").classList.remove("open");
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = "Ya, Reset";
+    }
+  });
+
+  document.getElementById("reset-gaji-btn").addEventListener("click", () => document.getElementById("confirm-gaji-modal").classList.add("open"));
+  document.getElementById("confirm-gaji-cancel").addEventListener("click", () => document.getElementById("confirm-gaji-modal").classList.remove("open"));
+  document.getElementById("confirm-gaji-ok").addEventListener("click", async () => {
+    const btn = document.getElementById("confirm-gaji-ok");
+    btn.disabled = true; btn.textContent = "Mereset...";
+    try {
+      await api("/api/admin/rekap", { method: "POST", body: JSON.stringify({ resetGaji: true }) });
+      document.getElementById("confirm-gaji-modal").classList.remove("open");
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = "Ya, Reset";
+    }
+  });
+
+  // ====== Iklan (papan iklan foto + teks buat Dashboard) ======
+  let iklanFotoDataUrl = null;
+
+  // Kompres foto di browser dulu sebelum dikirim, sama kayak logika di
+  // Dashboard buat foto laporan absensi — biar nggak kena 413 Payload Too Large.
+  function compressIklanImage(file, maxDim = 1280, quality = 0.72) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+          else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); reject(new Error("Gagal memuat foto.")); };
+      img.src = objectUrl;
+    });
+  }
+  async function compressIklanUntilSmallEnough(file, maxBytes = 900 * 1024) {
+    let quality = 0.72;
+    let dataUrl = await compressIklanImage(file, 1280, quality);
+    while (dataUrl.length * 0.75 > maxBytes && quality > 0.35) {
+      quality -= 0.12;
+      dataUrl = await compressIklanImage(file, 1280, quality);
+    }
+    return dataUrl;
+  }
+
+  function renderIklanFotoPreview() {
+    const el = document.getElementById("iklan-foto-preview");
+    if (!iklanFotoDataUrl) { el.innerHTML = ""; return; }
+    el.innerHTML = `
+      <div style="position:relative;display:inline-block">
+        <img src="${iklanFotoDataUrl}" style="max-width:160px;max-height:160px;object-fit:cover;border-radius:8px;border:1px solid var(--border)">
+        <button type="button" id="iklan-foto-remove" style="position:absolute;top:-6px;right:-6px;background:#b91c1c;color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1;">×</button>
+      </div>`;
+    document.getElementById("iklan-foto-remove").addEventListener("click", () => {
+      iklanFotoDataUrl = null;
+      renderIklanFotoPreview();
+    });
+  }
+
+  const iklanDropzone = document.getElementById("iklan-dropzone");
+  const iklanFotoInput = document.getElementById("iklan-foto");
+  iklanDropzone.addEventListener("click", () => iklanFotoInput.click());
+  async function handleIklanFile(file) {
+    const errorEl = document.getElementById("iklan-error");
+    errorEl.textContent = "";
+    if (!file || !file.type.startsWith("image/")) return;
+    try {
+      iklanFotoDataUrl = await compressIklanUntilSmallEnough(file);
+      renderIklanFotoPreview();
+    } catch (e) {
+      errorEl.textContent = `Gagal memproses foto: ${e.message}`;
+    }
+  }
+  iklanFotoInput.addEventListener("change", (e) => { handleIklanFile(e.target.files[0]); iklanFotoInput.value = ""; });
+  ["dragenter", "dragover"].forEach((evt) => iklanDropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    iklanDropzone.style.borderColor = "var(--red)";
+  }));
+  ["dragleave", "drop"].forEach((evt) => iklanDropzone.addEventListener(evt, (e) => {
+    e.preventDefault();
+    iklanDropzone.style.borderColor = "var(--border)";
+  }));
+  iklanDropzone.addEventListener("drop", (e) => { handleIklanFile(e.dataTransfer.files[0]); });
+
+  document.getElementById("iklan-submit").addEventListener("click", async () => {
+    const errorEl = document.getElementById("iklan-error");
+    errorEl.textContent = "";
+    const teks = document.getElementById("iklan-teks").value.trim();
+    if (!teks && !iklanFotoDataUrl) { errorEl.textContent = "Isi teks atau foto iklan, minimal salah satu."; return; }
+
+    const btn = document.getElementById("iklan-submit");
+    btn.disabled = true; btn.textContent = "Menambahkan...";
+    try {
+      await api("/api/admin/rekap", { method: "POST", body: JSON.stringify({ tambahIklan: { teks, foto: iklanFotoDataUrl } }) });
+      document.getElementById("iklan-teks").value = "";
+      iklanFotoDataUrl = null;
+      renderIklanFotoPreview();
+      await refreshAll();
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Tambah Iklan";
+    }
+  });
+
+  function refreshIklan() {
+    const listEl = document.getElementById("iklan-list");
+    if (!allIklan.length) { listEl.innerHTML = `<div class="sub">Belum ada iklan aktif.</div>`; return; }
+    listEl.innerHTML = allIklan.map((i) => `
+      <div style="display:flex;gap:12px;align-items:flex-start;border:1px solid var(--border);border-radius:10px;padding:12px">
+        ${i.foto ? `<img src="${i.foto}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;flex-shrink:0">` : ""}
+        <div style="flex:1;min-width:0">
+          ${i.teks ? `<div style="font-size:13px;white-space:pre-wrap;margin-bottom:6px">${i.teks}</div>` : ""}
+          <div style="font-size:11px;color:var(--faint)">Dibuat oleh ${i.dibuatOleh} • ${formatTanggal(i.createdAt.slice(0, 10))}</div>
+        </div>
+        <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px;background:#7c2d12;color:#fed7aa;flex-shrink:0" onclick="hapusIklan('${i.id}')">Hapus</button>
+      </div>`).join("");
+  }
+
+  async function hapusIklan(id) {
+    if (!confirm("Hapus iklan ini?")) return;
+    try {
+      await api("/api/admin/rekap", { method: "POST", body: JSON.stringify({ hapusIklan: id }) });
+      await refreshAll();
+    } catch (e) {
+      alert(e.message);
+    }
+  }
+
+  // ====== Kirim Gaji Manual (custom, semua field diisi bebas oleh HC) ======
+  document.getElementById("gm-pangkat-list").innerHTML = PANGKAT_LIST.map((p) => `<option value="${p}">`).join("");
+
+  document.getElementById("gm-submit").addEventListener("click", async () => {
+    const errorEl = document.getElementById("gm-error");
+    errorEl.textContent = "";
+
+    const namaPetugas = document.getElementById("gm-nama").value.trim();
+    const pangkat = document.getElementById("gm-pangkat").value.trim();
+    const jumlah = document.getElementById("gm-jumlah").value.trim();
+    const diberikanOleh = document.getElementById("gm-diberikan").value.trim() || `@${currentUsername}`;
+
+    if (!namaPetugas || !pangkat || !jumlah) {
+      errorEl.textContent = "Nama, Pangkat, dan Jumlah wajib diisi.";
+      return;
+    }
+
+    const btn = document.getElementById("gm-submit");
+    btn.disabled = true; btn.textContent = "Mengirim...";
+    try {
+      await api("/api/admin/rekap", {
+        method: "POST",
+        body: JSON.stringify({ kirimGajiManual: { namaPetugas, pangkat, jumlah, diberikanOleh } }),
+      });
+      document.getElementById("gm-nama").value = "";
+      document.getElementById("gm-pangkat").value = "";
+      document.getElementById("gm-jumlah").value = "";
+      document.getElementById("gm-diberikan").value = `@${currentUsername}`;
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Kirim ke Discord";
+    }
+  });
+</script>
+</body>
+</html>

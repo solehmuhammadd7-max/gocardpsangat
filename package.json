@@ -1,0 +1,9 @@
+{
+  "name": "kepolisian-nexotis",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Absensi Kepolisian Nexotis - login Discord OAuth2, deploy di Vercel",
+  "dependencies": {
+    "@upstash/redis": "^1.34.3"
+  }
+}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kepolisian Nexotis - Daftar Akun</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="flag"><svg class="logo-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
+      <h1>DAFTAR AKUN BARU</h1>
+      <p>Akun kamu perlu di approve Perwira tinggi dulu sebelum bisa login.</p>
+  
+      <div class="form-group" style="text-align:left">
+        <label for="reg-username">Username</label>
+        <input type="text" id="reg-username" placeholder="username buat login" autocomplete="username">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" placeholder="minimal 6 karakter" autocomplete="new-password">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label for="reg-nama">Nama Karakter Kamu</label>
+        <input type="text" id="reg-nama" placeholder="nama character kamu">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label for="reg-pangkat">Pangkat yang Diajukan</label>
+        <select id="reg-pangkat"></select>
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="register-btn">Daftar</button>
+      <div class="error-msg" id="error-msg"></div>
+      <div class="foot">Sudah punya akun? <a href="index.html" style="color: red; font-weight: bold;">Masuk di sini</a></div>
+    </div>
+  </div>
+
+<script src="app.js"></script>
+<script>
+  const pangkatSelect = document.getElementById("reg-pangkat");
+  pangkatSelect.innerHTML = PANGKAT_LIST.map((p) => `<option value="${p}">${p}</option>`).join("");
+  pangkatSelect.value = PANGKAT_LIST[PANGKAT_LIST.length - 1]; // default: pangkat terendah
+
+  document.getElementById("register-btn").addEventListener("click", doRegister);
+
+  async function doRegister() {
+    const errorEl = document.getElementById("error-msg");
+    errorEl.style.color = "";
+    errorEl.textContent = "";
+    const username = document.getElementById("reg-username").value.trim();
+    const password = document.getElementById("reg-password").value;
+    const namaKarakter = document.getElementById("reg-nama").value.trim();
+    const pangkat = pangkatSelect.value;
+
+    if (!username || !password) { errorEl.textContent = "Username Dan password wajib diisi."; return; }
+    if (password.length < 6) { errorEl.textContent = "Password minimal 6 karakter."; return; }
+
+    const btn = document.getElementById("register-btn");
+    btn.disabled = true; btn.textContent = "Mendaftar...";
+    try {
+      await api("/api/auth-login", { method: "POST", body: JSON.stringify({ daftar: true, username, password, namaKarakter, pangkat }) });
+      errorEl.style.color = "var(--green)";
+      errorEl.textContent = "Pendaftaran berhasil dikirim! Tunggu approval dari Perwira Tinggi sebelum bisa login.";
+      document.getElementById("reg-username").value = "";
+      document.getElementById("reg-password").value = "";
+      document.getElementById("reg-nama").value = "";
+      pangkatSelect.value = PANGKAT_LIST[PANGKAT_LIST.length - 1];
+    } catch (e) {
+      errorEl.style.color = "";
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Daftar";
+    }
+  }
+</script>
+</body>
+</html>
