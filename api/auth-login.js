@@ -167,6 +167,9 @@ async function handleWargaGet(req, res) {
 //   POST ?aksi=login-bind  {pre,email}   -> akun lama belum punya Gmail: kirim kode ke Gmail barunya
 //   POST ?aksi=login-verif {pre,code}    -> cek kode, simpan IP, buat sesi
 //   POST ?aksi=login-ulang {pre}         -> kirim ulang kode
+// HC sementara: kotak "Daftar sebagai High Command" hanya aktif selama BELUM ada HC sama sekali.
+// Kalau env HC_BOOTSTRAP_KEY diisi, kodenya juga wajib benar.
+const adaHC = (users) => users.some((u) => u.isHighCommand && u.status !== "ditolak");
 const OTP_TTL = 600, MAX_TRY = 5, MAX_IP = 10;
 const ERR_KODE = "Kode salah atau sudah kedaluwarsa.";
 
@@ -212,8 +215,13 @@ async function handleOtpPost(req, res, aksi) {
       const users = await kvStore.getUsers();
       if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) return res.status(409).json({ error: "Username sudah dipakai." });
       if (users.some((u) => (u.email || "").toLowerCase() === email)) return res.status(409).json({ error: "Gmail ini sudah terdaftar." });
+      const hc = !!b.hc;
+      if (hc) {
+        if (adaHC(users)) return res.status(403).json({ error: "High Command sudah ada, pendaftaran HC sementara ditutup." });
+        if (process.env.HC_BOOTSTRAP_KEY && String(b.hcKey || "") !== process.env.HC_BOOTSTRAP_KEY) return res.status(403).json({ error: "Kode HC salah." });
+      }
       const pangkat = PANGKAT_LIST.includes(b.pangkat) ? b.pangkat : PANGKAT_LIST[PANGKAT_LIST.length - 1];
-      await kirimOtp("reg:" + email, { username, passwordHash: hashPassword(String(b.password)), namaKarakter: String(b.namaKarakter || "").trim().slice(0, 40), pangkat }, email, "Masukkan kode ini untuk menyelesaikan pendaftaran akun kamu.");
+      await kirimOtp("reg:" + email, { username, passwordHash: hashPassword(String(b.password)), namaKarakter: String(b.namaKarakter || "").trim().slice(0, 40), pangkat, hc }, email, "Masukkan kode ini untuk menyelesaikan pendaftaran akun kamu.");
       return res.json({ ok: true });
     }
     if (aksi === "reg-verif") {
@@ -222,9 +230,10 @@ async function handleOtpPost(req, res, aksi) {
       if (!o) return res.status(400).json({ error: ERR_KODE });
       const users = await kvStore.getUsers();
       if (users.some((u) => u.username.toLowerCase() === o.username.toLowerCase())) return res.status(409).json({ error: "Username sudah dipakai." });
-      users.push({ id: crypto.randomBytes(8).toString("hex"), username: o.username, passwordHash: o.passwordHash, namaKarakter: o.namaKarakter, pangkat: o.pangkat, email, emailVerified: true, isHighCommand: false, avatar: null, status: "pending", bergabung: jakartaTodayISO(), knownIps: [mail.getIp(req)] });
+      const jadiHC = !!o.hc && !adaHC(users); // dicek ulang saat verifikasi
+      users.push({ id: crypto.randomBytes(8).toString("hex"), username: o.username, passwordHash: o.passwordHash, namaKarakter: o.namaKarakter, pangkat: o.pangkat, email, emailVerified: true, isHighCommand: jadiHC, avatar: null, status: jadiHC ? "approved" : "pending", bergabung: jakartaTodayISO(), knownIps: [mail.getIp(req)] });
       await kvStore.setUsers(users);
-      return res.json({ ok: true });
+      return res.json({ ok: true, hc: jadiHC });
     }
     const uid = preUser(b.pre);
     if (!uid) return res.status(401).json({ error: "Sesi verifikasi habis, login ulang." });
@@ -263,6 +272,10 @@ async function handleOtpPost(req, res, aksi) {
 module.exports = async (req, res) => {
   const aksi = req.query && req.query.aksi;
 
+  if (req.method === "GET" && aksi === "reg-info") {
+    try { return res.json({ bootstrap: !adaHC(await kvStore.getUsers()), needKey: !!process.env.HC_BOOTSTRAP_KEY }); }
+    catch (e) { return res.json({ bootstrap: false }); }
+  }
   if (req.method === "POST" && /^(reg-|login-)/.test(String(aksi))) return handleOtpPost(req, res, aksi);
 
   // Warga (login Discord)

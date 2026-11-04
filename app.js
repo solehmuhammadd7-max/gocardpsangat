@@ -466,3 +466,14 @@ function renderWargaNavbar(active, w) {
     window.location.href = "index.html";
   });
 }
+
+// Tombol "Lihat/Sembunyi" untuk input password di halaman login & daftar.
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".auth-card input[type=password]").forEach((i) => {
+    const w = document.createElement("div"); w.className = "pw-wrap";
+    i.parentNode.insertBefore(w, i); w.appendChild(i);
+    const b = document.createElement("button"); b.type = "button"; b.textContent = "Lihat";
+    b.onclick = () => { const s = i.type === "password"; i.type = s ? "text" : "password"; b.textContent = s ? "Sembunyi" : "Lihat"; };
+    w.appendChild(b);
+  });
+});

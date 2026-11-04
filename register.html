@@ -9,10 +9,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="login-wrap">
-    <div class="login-card">
-      <div class="flag"><svg class="logo-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
-      <h1>KEPOLISIAN NEXOTIS</h1>
+  <div class="auth">
+    <aside class="auth-hero">
+      <div class="shield"><svg class="logo-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
+      <h2>KEPOLISIAN<br>NEXOTIS</h2>
+      <p>Sistem absensi dan manajemen anggota.</p>
+      <ul><li>Verifikasi Gmail saat daftar</li><li>Kode keamanan untuk login dari IP baru</li><li>Absensi, gaji, dan arrest record</li></ul>
+    </aside>
+    <main class="auth-main">
+    <div class="auth-card">
+      <h1>Buat Akun</h1>
+      <div class="sub">Daftar dengan Gmail, lalu verifikasi dengan kode 6 digit.</div>
       <div id="step-form">
         <p>Daftar dengan Gmail. Kode verifikasi akan dikirim ke Gmail kamu, lalu akun menunggu approval Perwira Tinggi.</p>
         <div class="form-group" style="text-align:left"><label for="reg-username">Username</label>
@@ -25,6 +32,10 @@
           <input type="text" id="reg-nama" placeholder="nama character kamu"></div>
         <div class="form-group" style="text-align:left"><label for="reg-pangkat">Pangkat yang Diajukan</label>
           <select id="reg-pangkat"></select></div>
+        <div class="hc-box" id="hc-box" style="display:none">
+          <label><input type="checkbox" id="reg-hc"><span>Daftar sebagai High Command (sementara)<small>Langsung aktif tanpa approval. Kotak ini hilang otomatis setelah ada High Command.</small></span></label>
+          <div id="hc-key-wrap" style="display:none;margin-top:10px"><input type="password" id="reg-hckey" placeholder="Kode HC"></div>
+        </div>
         <button class="btn btn-primary" style="width:100%" id="register-btn">Kirim Kode ke Gmail</button>
       </div>
 
@@ -39,6 +50,7 @@
       <div class="ok-msg" id="ok-msg"></div>
       <div class="foot">Sudah punya akun? <a href="index.html" class="link-btn">Masuk di sini</a></div>
     </div>
+    </main>
   </div>
 
 <script src="app.js"></script>
@@ -47,7 +59,9 @@
   $("reg-pangkat").innerHTML = PANGKAT_LIST.map((p) => `<option value="${p}">${p}</option>`).join("");
   $("reg-pangkat").value = PANGKAT_LIST[PANGKAT_LIST.length - 1];
   const post = (aksi, body) => api("/api/auth-login?aksi=" + aksi, { method: "POST", body: JSON.stringify(body) });
-  let data = null;
+  let data = null, needKey = false;
+  api("/api/auth-login?aksi=reg-info").then((i) => { if (i.bootstrap) { $("hc-box").style.display = "block"; needKey = !!i.needKey; } }).catch(() => {});
+  $("reg-hc").onchange = () => { $("hc-key-wrap").style.display = $("reg-hc").checked && needKey ? "block" : "none"; };
   async function busy(btn, label, fn) {
     const old = btn.textContent; btn.disabled = true; btn.textContent = label; $("error-msg").textContent = ""; $("ok-msg").textContent = "";
     try { await fn(); } catch (e) { $("error-msg").textContent = e.message; } finally { btn.disabled = false; btn.textContent = old; }
@@ -55,15 +69,16 @@
   function step(s) { $("step-form").style.display = s === "form" ? "block" : "none"; $("step-code").style.display = s === "code" ? "block" : "none"; }
 
   $("register-btn").onclick = () => busy($("register-btn"), "Mengirim kode...", async () => {
-    data = { username: $("reg-username").value.trim(), email: $("reg-email").value.trim(), password: $("reg-password").value, namaKarakter: $("reg-nama").value.trim(), pangkat: $("reg-pangkat").value };
+    data = { username: $("reg-username").value.trim(), email: $("reg-email").value.trim(), password: $("reg-password").value, namaKarakter: $("reg-nama").value.trim(), pangkat: $("reg-pangkat").value, hc: $("reg-hc").checked, hcKey: $("reg-hckey").value };
     if (!data.username || !data.email || !data.password) throw new Error("Username, Gmail, dan password wajib diisi.");
     await post("reg-kirim", data);
     $("code-info").textContent = "Kode 6 digit sudah dikirim ke " + data.email + ". Berlaku 10 menit.";
     step("code"); $("code").value = ""; $("code").focus();
   });
   $("code-btn").onclick = () => busy($("code-btn"), "Memeriksa...", async () => {
-    await post("reg-verif", { email: data.email, code: $("code").value.trim() });
+    const v = await post("reg-verif", { email: data.email, code: $("code").value.trim() });
     step("form"); ["reg-username", "reg-email", "reg-password", "reg-nama"].forEach((i) => $(i).value = "");
+    if (v.hc) { $("hc-box").style.display = "none"; $("ok-msg").textContent = "Akun High Command aktif! Silakan login."; return; }
     $("ok-msg").textContent = "Gmail terverifikasi! Pendaftaran terkirim, tunggu approval Perwira Tinggi sebelum bisa login.";
   });
   $("resend-btn").onclick = () => busy($("resend-btn"), "Mengirim...", async () => { await post("reg-kirim", data); $("ok-msg").textContent = "Kode baru sudah dikirim."; });
