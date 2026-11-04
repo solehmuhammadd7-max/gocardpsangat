@@ -129,6 +129,17 @@ function effectiveMulai(periodeMulai, bergabung) {
 // polri.go.id). Edit teksnya di sini kalau mau ganti pengumuman.
 const MARQUEE_TEXT = "Selamat datang di Website Kepolisian Nexotos roleplaying, Tolong ketika ingin laporan arrest record atau duty, dll.. isi yang benar ya temen-temen..";
 
+/* ====== Tema (pink / orange) ====== */
+function getTheme() {
+  try { return localStorage.getItem("theme") === "orange" ? "orange" : "pink"; } catch (e) { return "pink"; }
+}
+function applyTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  const m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", t === "orange" ? "#ea580c" : "#db2777");
+}
+applyTheme(getTheme());
+
 /* ====== Navbar ====== */
 function renderNavbar(activePage, user) {
   const mount = document.getElementById("navbar-mount");
@@ -162,10 +173,11 @@ function renderNavbar(activePage, user) {
           <div class="rank">${user.pangkat}${user.isHighCommand ? " · High Command" : ""}</div>
         </div>
         <div class="avatar">${user.avatar ? "" : initials}</div>
-        <div id="profile-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:var(--card,#1e293b);border:1px solid var(--border,#334155);border-radius:10px;overflow:hidden;min-width:170px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3)">
-          <button id="menu-pengaturan-profil" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px">Pengaturan Profil</button>
-          <button id="menu-ganti-password" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px;border-top:1px solid var(--border,#334155)">Ganti Password</button>
-          <button id="menu-logout" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px;border-top:1px solid var(--border,#334155)">Logout</button>
+        <div id="profile-menu">
+          <button class="pm-item" id="menu-pengaturan-profil">Pengaturan Profil</button>
+          <button class="pm-item" id="menu-ganti-password">Ganti Password</button>
+          <button class="pm-item" id="menu-tema">Tema: ${getTheme() === "pink" ? "Pink 🌸 → Orens" : "Orens 🍊 → Pink"}</button>
+          <button class="pm-item danger" id="menu-logout">Logout</button>
         </div>
       </div>
     </div>
@@ -219,6 +231,12 @@ function renderNavbar(activePage, user) {
     navMenu.classList.remove("open");
   });
 
+  document.getElementById("menu-tema").addEventListener("click", () => {
+    const next = getTheme() === "pink" ? "orange" : "pink";
+    try { localStorage.setItem("theme", next); } catch (e) { /* abaikan */ }
+    applyTheme(next);
+    document.getElementById("menu-tema").textContent = next === "pink" ? "Tema: Pink 🌸 → Orens" : "Tema: Orens 🍊 → Pink";
+  });
   document.getElementById("menu-logout").addEventListener("click", async () => {
     try { await api("/api/logout", { method: "POST" }); } catch (e) { /* tetap lanjut ke login */ }
     window.location.href = "index.html";
