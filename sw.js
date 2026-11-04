@@ -1,4 +1,4 @@
-const CACHE_NAME = "nexotis-shell-v8";
+const CACHE_NAME = "nexotis-shell-v9";
 const SHELL_FILES = [
   "./index.html",
   "./dashboard.html",

@@ -977,3 +977,70 @@ body:not(:has(.auth)) { background-color: #f3f4f6; background-image: linear-grad
 input, select, textarea { background: #fff; border-color: #d9dbe0; }
 .note, .skel { background: #f3f4f6; }
 ::selection { background: #c81e1e; color: #fff; }
+
+/* ====== v7 — Redesign dashboard: grid, animasi di mana-mana, ringan (transform/opacity saja) ====== */
+@keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rowIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+@keyframes barGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+:root { --blue: #b91c1c; }
+body:not(:has(.auth)) { background-color: #f3f4f6; background-image: radial-gradient(#d8dae0 1px, transparent 1px); background-size: 22px 22px; animation: pageIn .35s ease both; }
+.pill.cuti .num { color: #2563eb; }
+
+/* Header: navbar + marquee satu blok merah */
+.navbar { box-shadow: none; }
+.navbar::after { display: none; }
+.marquee-bar { background: #6f0f0f; border-bottom: 0; padding: 7px 0; box-shadow: 0 8px 20px rgba(100,10,10,.25); }
+.navbar nav a { position: relative; }
+.navbar nav a::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 2px; background: #fff; border-radius: 2px; transform: scaleX(0); transition: transform .2s; }
+@media (hover: hover) { .navbar nav a:hover::after { transform: scaleX(1); } }
+
+/* Layout dashboard: grid 12 kolom */
+body.dash .container { max-width: 1100px; display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; align-items: stretch; padding-top: 22px; }
+body.dash .container > * { margin: 0; grid-column: span 12; min-width: 0; }
+body.dash .container > .stats-grid { grid-column: span 5; display: grid; }
+body.dash .container > .stats-grid .stat-card { height: 100%; display: flex; flex-direction: column; justify-content: center; }
+body.dash .container > .pill-row { grid-column: span 7; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+body.dash .container > #leaderboard-card, body.dash .container > #promosi-card { grid-column: span 6; }
+body.dash #leaderboard-card[style*="none"] + #promosi-card { grid-column: span 12; }
+body.dash .pill { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 14px 6px; }
+@media (max-width: 900px) { body.dash .container > .stats-grid, body.dash .container > .pill-row, body.dash .container > #leaderboard-card, body.dash .container > #promosi-card { grid-column: span 12; } }
+@media (max-width: 480px) { body.dash .container > .pill-row { grid-template-columns: repeat(2, 1fr); } }
+
+/* Hero */
+body.dash .container > .card:first-child { min-height: 130px; display: flex; flex-direction: column; justify-content: center; padding: 28px 30px; background: linear-gradient(115deg, #6f0d0d 0%, #b01818 55%, #dc2626 100%); }
+body.dash .container > .card:first-child h2 { font-size: 28px; letter-spacing: .3px; }
+body.dash .container > .card:first-child .sub { display: inline-block; align-self: flex-start; margin-top: 6px; padding: 5px 14px; border-radius: 99px; background: rgba(255,255,255,.2); font-weight: 700; font-size: 12px; }
+body.dash .container > .card:first-child::before { right: 28px; top: 50%; width: 120px; height: 120px; margin-top: -60px; border-radius: 0; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1' stroke-linejoin='round'%3E%3Cpath d='M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z'/%3E%3Cpath d='M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z' fill='white' stroke='none'/%3E%3C/svg%3E") center/contain no-repeat; opacity: .22; }
+body.dash .container > .card:first-child::after { animation-duration: 9s; }
+.stat-card.hours::after { animation: none; }
+
+/* Kartu */
+.card, .panel { border: 1px solid #e6e7eb; border-left: 4px solid #c81e1e; background: #fff; padding: 22px; content-visibility: auto; contain-intrinsic-size: auto 260px; }
+.card h2 { display: flex; align-items: center; gap: 8px; font-size: 16px; color: #1f2937; }
+.card:nth-child(1) { animation-delay: 0s; } .card:nth-child(2) { animation-delay: .05s; } .card:nth-child(3) { animation-delay: .1s; }
+.card:nth-child(4) { animation-delay: .15s; } .card:nth-child(5) { animation-delay: .2s; } .card:nth-child(n+6) { animation-delay: .25s; }
+.stat-card.hours { padding: 26px; }
+.stat-card.hours .value { font-size: 40px; letter-spacing: -.5px; }
+.pill .num { font-size: 30px; font-weight: 800; }
+
+/* Tabel */
+thead th { background: #b91c1c !important; background-image: none !important; }
+tbody tr { animation: rowIn .35s ease both; }
+tbody tr:nth-child(2) { animation-delay: .03s; } tbody tr:nth-child(3) { animation-delay: .06s; } tbody tr:nth-child(4) { animation-delay: .09s; }
+tbody tr:nth-child(5) { animation-delay: .12s; } tbody tr:nth-child(6) { animation-delay: .15s; } tbody tr:nth-child(7) { animation-delay: .18s; }
+tbody tr:nth-child(8) { animation-delay: .21s; } tbody tr:nth-child(n+9) { animation-delay: .24s; }
+tbody tr:nth-child(n+25) { animation: none; }
+tbody tr:nth-child(even) { background: #f8f9fb; } tbody tr:hover { background: #f1f2f6; }
+
+/* Bar progres */
+.progress-track { height: 12px; background: #e5e7eb; }
+.progress-fill { transform-origin: left; animation: barGrow .9s cubic-bezier(.2,.8,.2,1) both; }
+
+/* Interaksi tombol */
+.btn { transition: transform .15s; }
+@media (hover: hover) { .btn:hover { transform: translateY(-2px); } }
+.btn:active { transform: scale(.97); }
+
+@media (prefers-reduced-motion: reduce) { body, tbody tr, .progress-fill, .card, .stat-card, .pill { animation: none !important; } }
+.stat-card.hours::after { display: none; }

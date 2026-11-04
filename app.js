@@ -477,3 +477,34 @@ document.addEventListener("DOMContentLoaded", () => {
     w.appendChild(b);
   });
 });
+
+// Efek hitung naik (count-up) untuk angka statistik. Ringan: 1 observer + requestAnimationFrame.
+(function () {
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const SEL = ".pill .num, .stat-card .value, .tile b";
+  function run(el) {
+    const raw = el.textContent;
+    if (el.dataset.cuAnim || el.dataset.cu === raw) return;
+    const m = raw.match(/-?\d+(?:[.,]\d+)?/);
+    el.dataset.cu = raw;
+    if (!m) return;
+    const target = parseFloat(m[0].replace(",", "."));
+    if (!isFinite(target) || target === 0) return;
+    const dec = (m[0].split(/[.,]/)[1] || "").length, pre = raw.slice(0, m.index), suf = raw.slice(m.index + m[0].length);
+    el.dataset.cuAnim = "1";
+    const t0 = performance.now(), D = 800;
+    (function f(t) {
+      const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
+      if (k < 1) { el.textContent = pre + (target * e).toFixed(dec) + suf; requestAnimationFrame(f); }
+      else { el.textContent = raw; delete el.dataset.cuAnim; }
+    })(t0);
+  }
+  new MutationObserver((ms) => {
+    const seen = new Set();
+    ms.forEach((mu) => {
+      const n = mu.target.nodeType === 3 ? mu.target.parentElement : mu.target;
+      const el = n && n.closest && n.closest(SEL);
+      if (el && !seen.has(el)) { seen.add(el); run(el); }
+    });
+  }).observe(document.documentElement, { subtree: true, childList: true, characterData: true });
+})();
