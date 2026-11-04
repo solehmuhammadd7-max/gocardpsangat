@@ -903,3 +903,67 @@ body:has(.auth) { background: #8f1414; }
 .auth-card .foot { margin-top: 18px; text-align: center; font-size: 12px; color: rgba(255,255,255,.75); }
 @media (max-width: 600px) { .auth-card { padding: 26px 18px 20px; border-radius: 20px; } .blob { width: 340px; height: 340px; } }
 @media (prefers-reduced-motion: reduce) { .auth *, .auth *::before, .auth *::after { animation: none !important; } }
+
+/* ====== Dashboard & halaman anggota — Merah Putih (animasi ringan: transform/opacity) ====== */
+@keyframes popIn { from { opacity: 0; transform: translateY(12px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes sirenBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: .15; } }
+@keyframes sweep { 0% { transform: translateX(-120%) skewX(-20deg); } 60%,100% { transform: translateX(320%) skewX(-20deg); } }
+
+body:not(:has(.auth)) { background: #fdf1f1; background-image: linear-gradient(180deg, #f7caca 0, #fdf1f1 300px); background-repeat: no-repeat; }
+body:has(.auth) { background-image: none; }
+
+.navbar { position: sticky; top: 0; z-index: 20; background: linear-gradient(90deg, #7f1212, #c81e1e 60%, #dc2626) !important; border-bottom: 0; box-shadow: 0 6px 20px rgba(120,10,10,.3); }
+.navbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: repeating-linear-gradient(90deg, #fff 0 24px, transparent 24px 48px); opacity: .55; }
+.navbar nav a, .navbar nav span { padding: 7px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; transition: background-color .15s; }
+.navbar nav a { color: rgba(255,255,255,.9) !important; }
+.navbar nav .active { background: #fff !important; color: #b91c1c !important; box-shadow: 0 4px 10px rgba(0,0,0,.18); }
+.navbar .user .info .rank { color: rgba(255,255,255,.85) !important; }
+
+.container { max-width: 1040px; }
+.card, .panel { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--red); border-top: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 22px rgba(185,28,28,.08); }
+.card h2 { font-size: 16px; }
+
+/* Banner sapaan (khusus dashboard) */
+body.dash .container > .card:first-child { position: relative; overflow: hidden; border: 0; color: #fff; padding: 26px 24px; background: linear-gradient(120deg, #7f1212, #c81e1e 62%, #e11d1d); box-shadow: 0 14px 30px rgba(150,15,15,.35); }
+body.dash .container > .card:first-child h2 { color: #fff; font-size: 24px; margin-bottom: 6px; }
+body.dash .container > .card:first-child .sub { color: rgba(255,255,255,.88); font-size: 13px; margin: 0; }
+body.dash .container > .card:first-child::before { content: ""; position: absolute; right: -60px; top: -80px; width: 240px; height: 240px; border-radius: 50%; background: rgba(255,255,255,.12); }
+body.dash .container > .card:first-child::after { content: ""; position: absolute; top: 0; left: 0; width: 28%; height: 100%; background: rgba(255,255,255,.12); animation: sweep 6s ease-in-out infinite; }
+body.dash .container > .card:first-child > * { position: relative; z-index: 1; }
+
+.stat-card { border-radius: 16px; border: 1px solid var(--border); background: #fff; box-shadow: 0 8px 22px rgba(185,28,28,.08); animation: popIn .5s ease both; }
+.stat-card.hours { position: relative; overflow: hidden; border: 0; background: linear-gradient(135deg, #b91c1c, #ef4444); box-shadow: 0 12px 26px rgba(200,30,30,.35); }
+.stat-card.hours .label, .stat-card.hours .sub { color: rgba(255,255,255,.85) !important; opacity: 1 !important; }
+.stat-card.hours .value { color: #fff; font-size: 34px; }
+.stat-card.hours::after { content: ""; position: absolute; top: 0; left: 0; width: 30%; height: 100%; background: rgba(255,255,255,.16); animation: sweep 5s ease-in-out 1s infinite; }
+.stat-card.money .value { color: #b91c1c; }
+
+.pill { background: #fff !important; border: 1px solid var(--border) !important; border-top-width: 4px !important; border-radius: 14px; box-shadow: 0 6px 16px rgba(185,28,28,.07); animation: popIn .5s ease both; }
+.pill:nth-child(1) { animation-delay: .05s; } .pill:nth-child(2) { animation-delay: .12s; } .pill:nth-child(3) { animation-delay: .19s; } .pill:nth-child(4) { animation-delay: .26s; }
+.pill .num { font-size: 26px; }
+.pill .lbl { font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.pill.hadir { border-top-color: #10b981 !important; } .pill.izin { border-top-color: #d97706 !important; }
+.pill.cuti { border-top-color: #3b82f6 !important; } .pill.alpa { border-top-color: #c81e1e !important; }
+
+.progress-track { height: 10px; border-radius: 99px; background: #fee2e2; overflow: hidden; }
+.progress-fill { position: relative; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #b91c1c, #ef4444); transition: width 1s cubic-bezier(.2,.8,.2,1); }
+
+table { border-collapse: separate; border-spacing: 0; }
+thead th { background: linear-gradient(90deg, #991b1b, #c81e1e) !important; color: #fff !important; font-weight: 700; padding: 10px 12px; border: 0; }
+thead th:first-child { border-top-left-radius: 10px; } thead th:last-child { border-top-right-radius: 10px; }
+tbody td { padding: 10px 12px; border-bottom: 1px solid #f6dede; }
+tbody tr:nth-child(even) { background: #fff7f7; }
+tbody tr { transition: background-color .15s; }
+tbody tr:hover { background: #ffeaea; }
+
+.btn { border-radius: 12px; font-weight: 700; }
+.btn-primary { background: linear-gradient(135deg, #b91c1c, #ef4444); color: #fff; box-shadow: 0 8px 18px rgba(200,30,30,.28); }
+.btn-secondary { background: #fff; color: #b91c1c; border: 1.5px solid #f3b4b4; }
+.radio-option { border-radius: 12px; transition: background-color .15s, border-color .15s; }
+.radio-option.selected { background: #fee2e2; border-color: #c81e1e; color: #991b1b; }
+.container input:focus, .container select:focus, .container textarea:focus { border-color: #c81e1e; box-shadow: 0 0 0 3px rgba(200,30,30,.13); outline: 0; }
+.modal-box { border-radius: 18px; border-top: 5px solid #c81e1e; }
+.badge { border-radius: 99px; font-weight: 700; }
+@media (hover: hover) { .card:hover, .stat-card:hover { transform: translateY(-2px); transition: transform .2s; } }
+@media (max-width: 600px) { body.dash .container > .card:first-child h2 { font-size: 20px; } .stat-card.hours .value { font-size: 28px; } }
+@media (prefers-reduced-motion: reduce) { .stat-card, .pill, .card, body.dash .container > .card:first-child::after, .stat-card.hours::after { animation: none !important; } }
