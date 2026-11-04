@@ -28,7 +28,7 @@
             <div class="hero-name" id="p-nama"></div>
             <div class="lbls" id="p-lbl"></div>
             <p class="hero-bio" id="p-bio"></p>
-            <div class="hero-meta">Pratinjau - begini profilmu terlihat oleh warga lain di forum.</div>
+            <div class="hero-meta">Pratinjau - begini tampilan profilmu.</div>
           </div>
         </div>
       </div>
@@ -45,7 +45,7 @@
 
               <div class="form-group">
                 <label for="f-nama">Nama tampilan</label>
-                <input type="text" id="f-nama" maxlength="32" placeholder="nama yang tampil di forum" autocomplete="off">
+                <input type="text" id="f-nama" maxlength="32" placeholder="nama tampilan" autocomplete="off">
               </div>
 
               <div class="form-group" style="margin-bottom:6px">
@@ -114,7 +114,7 @@
     $("f-cnt").textContent = $("f-bio").value.length;
     renderAvatarW($("p-ava"), nama, W.avatar);
     $("f-nama").disabled = sinkron;
-    $("f-nama").placeholder = sinkron ? "ikut nama Discord" : "nama yang tampil di forum";
+    $("f-nama").placeholder = sinkron ? "ikut nama Discord" : "nama tampilan";
   }
 
   function isi(w) {
@@ -150,7 +150,7 @@
       const r = await api("/api/auth-login?aksi=warga-profil", { method: "POST", body: JSON.stringify(body) });
       isi(r.warga);
       renderWargaNavbar("profil", r.warga);
-      ok.textContent = "Tersimpan. Profil kamu sudah diperbarui di forum.";
+      ok.textContent = "Tersimpan. Profil kamu sudah diperbarui.";
     } catch (e) { err.textContent = e.message; }
     finally { btn.disabled = false; btn.textContent = "Simpan Perubahan"; }
   });

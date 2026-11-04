@@ -144,7 +144,6 @@ function renderNavbar(activePage, user) {
     ["undang-undang.html", "Undang-Undang", "undang-undang"],
     ["arrest-record.html", "Arrest Record", "arrest-record"],
     ["struktur.html", "Struktur Anggota", "struktur"],
-    ["forum.html", "Kritik & Saran", "forum"],
   ];
   const navLinksHtml = navItems.map(([href, label, page]) => linkOrSpan(href, label, page)).join("");
   const navMenuLinksHtml = navItems.map(([href, label, page]) => linkOrSpan(href, label, page)).join("");
@@ -283,7 +282,7 @@ function openProfileSettingsModal(user) {
           <button type="button" class="btn-link" id="ps-avatar-remove" style="display:none">Hapus Foto</button>
         </div>
         <div class="form-group"><label for="ps-nama">Nama Karakter</label><input type="text" id="ps-nama" placeholder="nama character kamu" maxlength="100"></div>
-        <div class="form-group"><label for="ps-bio">Bio <span style="font-weight:400;color:var(--faint)">(tampil di forum)</span></label><textarea id="ps-bio" maxlength="300" placeholder="cerita singkat tentang karakter kamu..." style="min-height:74px"></textarea></div>
+        <div class="form-group"><label for="ps-bio">Bio</label><textarea id="ps-bio" maxlength="300" placeholder="cerita singkat tentang karakter kamu..." style="min-height:74px"></textarea></div>
         <div class="error-msg" id="ps-error"></div>
         <div class="sub" id="ps-success" style="color:#22c55e;display:none;margin-bottom:8px">Profil berhasil diperbarui.</div>
         <div style="display:flex;gap:8px;justify-content:center">
@@ -454,7 +453,7 @@ function renderWargaNavbar(active, w) {
   mount.innerHTML = `
     <div class="navbar">
       <div class="brand"><span class="flag">${LOGO_SVG}</span> kepolisian nexotis</div>
-      <nav id="nav-links" style="display:flex">${item("warga.html", "Beranda", "beranda")}${item("forum.html", "Forum", "forum")}${item("profil.html", "Profil Saya", "profil")}</nav>
+      <nav id="nav-links" style="display:flex">${item("warga.html", "Beranda", "beranda")}${item("profil.html", "Profil Saya", "profil")}</nav>
       <div class="user">
         <div class="info"><div class="name">${escW(w.nama)}</div><div class="rank">${renderLabels(w.labels.slice(0, 1), true)}</div></div>
         <div class="avatar" id="w-nav-avatar"></div>
