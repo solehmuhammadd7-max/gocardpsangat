@@ -1,103 +1,73 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#db2777">
-  <title>Kepolisian Nexotis - Login</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kepolisian Nexotis - Login</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="auth">
-    <div class="bg"><span class="siren"></span><b class="blob b1"></b><b class="blob b2"></b><div class="parts"><i style="left:43%;--s:5px;--t:15s;--d:-10s"></i><i style="left:8%;--s:4px;--t:17s;--d:-1s"></i><i style="left:48%;--s:8px;--t:9s;--d:-14s"></i><i style="left:66%;--s:5px;--t:9s;--d:-1s"></i><i style="left:57%;--s:7px;--t:10s;--d:-3s"></i><i style="left:13%;--s:8px;--t:15s;--d:-0s"></i><i style="left:74%;--s:4px;--t:12s;--d:-10s"></i><i style="left:82%;--s:8px;--t:9s;--d:-9s"></i></div></div>
-    <main class="auth-main">
-    <div class="auth-card">
-      <div class="brand-top"><div class="shield"><svg class="logo-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div><div class="bt"><small>KEPOLISIAN</small><strong>NEXOTIS</strong></div></div>
-      <h1>Selamat Datang</h1>
-      <div class="sub">Masuk untuk membuka dashboard anggota.</div>
-      <!-- Langkah 1: username + password -->
-      <div id="step-login">
-        <p>Akses ini hanya untuk anggota. Belum punya akun? Daftar dengan Gmail kamu.</p>
-        <div class="form-group" style="text-align:left"><label for="username">Username</label>
-          <input type="text" id="username" placeholder="username kamu" autocomplete="username"></div>
-        <div class="form-group" style="text-align:left"><label for="password">Password</label>
-          <input type="password" id="password" placeholder="password kamu" autocomplete="current-password"></div>
-        <button class="btn btn-primary" style="width:100%" id="login-btn">Masuk</button>
-        <div style="margin-top:10px"><a href="register.html" class="link-btn">Belum punya akun? Daftar</a></div>
-        <div style="display:flex;align-items:center;gap:10px;margin:14px 0 12px;color:var(--faint);font-size:12px">
-          <div style="flex:1;height:1px;background:var(--border)"></div>warga / publik<div style="flex:1;height:1px;background:var(--border)"></div></div>
-        <a class="btn" href="/api/auth-login?aksi=discord" style="display:block;box-sizing:border-box;width:100%;text-align:center;text-decoration:none;background:#5865F2;color:#fff">Login dengan Discord</a>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="flag"><svg class="logo-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
+      <h1>KEPOLISIAN NEXOTIS</h1>
+      <p>Login akses ini hanya di akses oleh anggota saja, dan anggota bisa create nya di discord, terimakasih.</p>
+  
+      <div class="form-group" style="text-align:left">
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="username kamu" autocomplete="username">
       </div>
-
-      <!-- Langkah 2a: akun lama belum punya Gmail -->
-      <div id="step-bind" style="display:none">
-        <p>Akun kamu belum terhubung ke Gmail. Masukkan Gmail untuk keamanan, kode akan dikirim ke sana.</p>
-        <div class="form-group" style="text-align:left"><label for="bind-email">Gmail</label>
-          <input type="email" id="bind-email" placeholder="nama@gmail.com" autocomplete="email"></div>
-        <button class="btn btn-primary" style="width:100%" id="bind-btn">Kirim Kode</button>
+      <div class="form-group" style="text-align:left">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="password kamu" autocomplete="current-password">
       </div>
-
-      <!-- Langkah 2b: input kode -->
-      <div id="step-code" style="display:none">
-        <p id="code-info">Kode verifikasi sudah dikirim ke Gmail kamu.</p>
-        <div class="form-group"><input type="text" id="code" class="kode-input" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code"></div>
-        <button class="btn btn-primary" style="width:100%" id="code-btn">Verifikasi</button>
-        <div style="margin-top:10px"><button class="link-btn" id="resend-btn">Kirim ulang kode</button> <button class="link-btn" id="back-btn">Batal</button></div>
-      </div>
-
+      <button class="btn btn-primary" style="width:100%" id="login-btn">Masuk</button>
       <div class="error-msg" id="error-msg"></div>
-      <div class="ok-msg" id="ok-msg"></div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin:18px 0 12px;color:var(--faint);font-size:12px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>Click button dibawah ini untuk civil mendaftar account<div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <a class="btn" href="/api/auth-login?aksi=discord" style="display:block;box-sizing:border-box;width:100%;text-align:center;text-decoration:none;background:#5865F2;color:#fff">Login dengan Discord</a>
       <div class="foot">© 2026 Kepolisian Nexotis</div>
     </div>
-    </main>
   </div>
 
 <script src="app.js"></script>
 <script>
+  // Kalau sesi masih aktif, langsung ke dashboard
   (async () => {
-    try { await api("/api/me"); window.location.href = "dashboard.html"; return; } catch (e) {}
-    try { await api("/api/auth-login?aksi=warga-me"); window.location.href = "warga.html"; } catch (e) {}
+    try { await api("/api/me"); window.location.href = "dashboard.html"; return; }
+    catch (e) { /* bukan anggota */ }
+    try { await api("/api/auth-login?aksi=warga-me"); window.location.href = "warga.html"; }
+    catch (e) { /* belum login, tetap di sini */ }
   })();
 
-  const $ = (id) => document.getElementById(id);
+  // Pesan error dari alur login Discord (?err=...)
   const errQuery = new URLSearchParams(location.search).get("err");
-  if (errQuery) $("error-msg").textContent = errQuery;
-  let pre = "";
-  const post = (aksi, body) => api("/api/auth-login?aksi=" + aksi, { method: "POST", body: JSON.stringify(body) });
-  function show(step) { ["login", "bind", "code"].forEach((s) => $("step-" + s).style.display = s === step ? "block" : "none"); $("error-msg").textContent = ""; $("ok-msg").textContent = ""; }
-  async function busy(btn, label, fn) {
-    const old = btn.textContent; btn.disabled = true; btn.textContent = label; $("error-msg").textContent = "";
-    try { await fn(); } catch (e) { $("error-msg").textContent = e.message; } finally { btn.disabled = false; btn.textContent = old; }
-  }
-  function keKode(emailMasked) {
-    $("code-info").textContent = "Kode 6 digit sudah dikirim ke " + emailMasked + ". Berlaku 10 menit.";
-    show("code"); $("code").value = ""; $("code").focus();
-  }
+  if (errQuery) document.getElementById("error-msg").textContent = errQuery;
 
-  $("login-btn").onclick = () => busy($("login-btn"), "Memeriksa...", async () => {
-    const username = $("username").value.trim(), password = $("password").value;
-    if (!username || !password) throw new Error("Username & password wajib diisi.");
-    const r = await api("/api/auth-login", { method: "POST", body: JSON.stringify({ username, password }) });
-    if (r.need === "bind") { pre = r.pre; return show("bind"); }
-    if (r.need === "code") { pre = r.pre; return keKode(r.email); }
-    window.location.href = "dashboard.html";
-  });
-  $("password").addEventListener("keydown", (e) => { if (e.key === "Enter") $("login-btn").click(); });
+  document.getElementById("login-btn").addEventListener("click", doLogin);
+  document.getElementById("password").addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
 
-  $("bind-btn").onclick = () => busy($("bind-btn"), "Mengirim...", async () => {
-    const r = await post("login-bind", { pre, email: $("bind-email").value.trim() });
-    keKode(r.email);
-  });
-  $("code-btn").onclick = () => busy($("code-btn"), "Memeriksa...", async () => {
-    await post("login-verif", { pre, code: $("code").value.trim() });
-    window.location.href = "dashboard.html";
-  });
-  $("code").addEventListener("keydown", (e) => { if (e.key === "Enter") $("code-btn").click(); });
-  $("resend-btn").onclick = () => busy($("resend-btn"), "Mengirim...", async () => {
-    await post("login-ulang", { pre }); $("ok-msg").textContent = "Kode baru sudah dikirim.";
-  });
-  $("back-btn").onclick = () => { pre = ""; show("login"); };
+  async function doLogin() {
+    const errorEl = document.getElementById("error-msg");
+    errorEl.textContent = "";
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+    if (!username || !password) { errorEl.textContent = "Username & password wajib diisi."; return; }
+
+    const btn = document.getElementById("login-btn");
+    btn.disabled = true; btn.textContent = "Memeriksa...";
+    try {
+      await api("/api/auth-login", { method: "POST", body: JSON.stringify({ username, password }) });
+      window.location.href = "dashboard.html";
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Masuk";
+    }
+  }
 </script>
 </body>
 </html>

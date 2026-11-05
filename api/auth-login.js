@@ -2,12 +2,8 @@ const kvStore = require("../lib/kv");
 const { verifyPassword } = require("../lib/password");
 const { setSessionCookie, sanitizeUser } = require("../lib/auth");
 const crypto = require("crypto");
-const session = require("../lib/session");
-const mail = require("../lib/mail");
-const { hashPassword } = require("../lib/password");
-const { jakartaTodayISO } = require("../lib/waktu");
-const { PANGKAT_LIST } = require("../lib/pangkat");
 const warga = require("../lib/warga");
+const forum = require("../lib/forum");
 
 const SESSION_TTL_SEC = 12 * 60 * 60;
 
@@ -19,7 +15,7 @@ function redirectUri(req) {
 function appendCookies(res, ...cookies) { res.setHeader("Set-Cookie", cookies); }
 
 // Halaman tujuan setelah login Discord (whitelist — nggak boleh redirect sembarangan).
-const TUJUAN = { warga: "/warga.html", profil: "/profil.html" };
+const TUJUAN = { warga: "/warga.html", profil: "/profil.html", forum: "/forum.html" };
 function urlIzin(req, clientId, state, senyap) {
   const p = { client_id: clientId, response_type: "code", redirect_uri: redirectUri(req), scope: warga.discordScope(), state };
   if (senyap) p.prompt = "none"; // sudah pernah izinkan -> langsung masuk tanpa layar konfirmasi
@@ -57,7 +53,7 @@ async function handleWargaGet(req, res) {
     if (!w) return res.status(401).json({ error: "Belum login." });
     let iklan = [], ring = {};
     try { iklan = await kvStore.getIklan(); } catch (e) { /* opsional */ }
-    
+    try { ring = await forum.beranda(w); } catch (e) { console.error("[beranda]", e.message); }
     return res.json({ warga: warga.sanitizeWarga(w), iklan, ...ring });
   }
 
@@ -161,122 +157,9 @@ async function handleWargaGet(req, res) {
 }
 
 
-// ====== Verifikasi Gmail (daftar & login dari IP baru) ======
-//   POST ?aksi=reg-kirim   {username,password,email,namaKarakter,pangkat} -> kirim kode ke Gmail
-//   POST ?aksi=reg-verif   {email,code}                                    -> akun dibuat (pending approval)
-//   POST ?aksi=login-bind  {pre,email}   -> akun lama belum punya Gmail: kirim kode ke Gmail barunya
-//   POST ?aksi=login-verif {pre,code}    -> cek kode, simpan IP, buat sesi
-//   POST ?aksi=login-ulang {pre}         -> kirim ulang kode
-// HC sementara: kotak "Daftar sebagai High Command" hanya aktif selama BELUM ada HC sama sekali.
-// Kalau env HC_BOOTSTRAP_KEY diisi, kodenya juga wajib benar.
-const adaHC = (users) => users.some((u) => u.isHighCommand && u.status !== "ditolak");
-const OTP_TTL = 600, MAX_TRY = 5, MAX_IP = 10;
-const ERR_KODE = "Kode salah atau sudah kedaluwarsa.";
-
-async function kirimOtp(key, data, email, tujuan) {
-  const cd = await kvStore.otpGet("cd:" + key);
-  if (cd) throw Object.assign(new Error("Tunggu 60 detik sebelum minta kode lagi."), { status: 429 });
-  const kode = mail.kode6();
-  await kvStore.otpSet(key, { ...data, email, h: mail.hashKode(kode), tries: 0 }, OTP_TTL);
-  await kvStore.otpSet("cd:" + key, 1, 60);
-  await mail.kirimKode(email, kode, tujuan);
-}
-async function cekOtp(key, code) {
-  const o = await kvStore.otpGet(key);
-  if (!o) return null;
-  if (o.tries >= MAX_TRY) { await kvStore.otpDel(key); return null; }
-  if (mail.hashKode(String(code || "").trim()) !== o.h) {
-    o.tries++; await kvStore.otpSet(key, o, OTP_TTL); return null;
-  }
-  await kvStore.otpDel(key);
-  return o;
-}
-function lolosKeSesi(res, users, user, ip) {
-  user.knownIps = [ip, ...(user.knownIps || []).filter((x) => x !== ip)].slice(0, MAX_IP);
-  return kvStore.setUsers(users).then(() => {
-    setSessionCookie(res, user.id, SESSION_TTL_SEC);
-    res.json({ ok: true, user: sanitizeUser(user) });
-  });
-}
-function preUser(pre) {
-  const p = session.verify(pre);
-  return p && p.pre ? p.pre : null;
-}
-const makePre = (id) => session.sign({ pre: id, exp: Date.now() + OTP_TTL * 1000 });
-
-async function handleOtpPost(req, res, aksi) {
-  const b = req.body || {};
-  try {
-    if (aksi === "reg-kirim") {
-      const username = String(b.username || "").trim(), email = String(b.email || "").trim().toLowerCase();
-      if (!/^[A-Za-z0-9_.-]{3,24}$/.test(username)) return res.status(400).json({ error: "Username 3-24 karakter (huruf/angka/_ . -)." });
-      if (String(b.password || "").length < 6) return res.status(400).json({ error: "Password minimal 6 karakter." });
-      if (!mail.cekGmail(email)) return res.status(400).json({ error: "Harus pakai alamat Gmail (@gmail.com)." });
-      const users = await kvStore.getUsers();
-      if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) return res.status(409).json({ error: "Username sudah dipakai." });
-      if (users.some((u) => (u.email || "").toLowerCase() === email)) return res.status(409).json({ error: "Gmail ini sudah terdaftar." });
-      const hc = !!b.hc;
-      if (hc) {
-        if (adaHC(users)) return res.status(403).json({ error: "High Command sudah ada, pendaftaran HC sementara ditutup." });
-        if (process.env.HC_BOOTSTRAP_KEY && String(b.hcKey || "") !== process.env.HC_BOOTSTRAP_KEY) return res.status(403).json({ error: "Kode HC salah." });
-      }
-      const pangkat = PANGKAT_LIST.includes(b.pangkat) ? b.pangkat : PANGKAT_LIST[PANGKAT_LIST.length - 1];
-      await kirimOtp("reg:" + email, { username, passwordHash: hashPassword(String(b.password)), namaKarakter: String(b.namaKarakter || "").trim().slice(0, 40), pangkat, hc }, email, "Masukkan kode ini untuk menyelesaikan pendaftaran akun kamu.");
-      return res.json({ ok: true });
-    }
-    if (aksi === "reg-verif") {
-      const email = String(b.email || "").trim().toLowerCase();
-      const o = await cekOtp("reg:" + email, b.code);
-      if (!o) return res.status(400).json({ error: ERR_KODE });
-      const users = await kvStore.getUsers();
-      if (users.some((u) => u.username.toLowerCase() === o.username.toLowerCase())) return res.status(409).json({ error: "Username sudah dipakai." });
-      const jadiHC = !!o.hc && !adaHC(users); // dicek ulang saat verifikasi
-      users.push({ id: crypto.randomBytes(8).toString("hex"), username: o.username, passwordHash: o.passwordHash, namaKarakter: o.namaKarakter, pangkat: o.pangkat, email, emailVerified: true, isHighCommand: jadiHC, avatar: null, status: jadiHC ? "approved" : "pending", bergabung: jakartaTodayISO(), knownIps: [mail.getIp(req)] });
-      await kvStore.setUsers(users);
-      return res.json({ ok: true, hc: jadiHC });
-    }
-    const uid = preUser(b.pre);
-    if (!uid) return res.status(401).json({ error: "Sesi verifikasi habis, login ulang." });
-    const users = await kvStore.getUsers();
-    const user = users.find((u) => u.id === uid);
-    if (!user) return res.status(404).json({ error: "Akun tidak ditemukan." });
-    const ip = mail.getIp(req);
-    if (aksi === "login-bind") {
-      if (user.email) return res.status(400).json({ error: "Akun ini sudah punya Gmail." });
-      const email = String(b.email || "").trim().toLowerCase();
-      if (!mail.cekGmail(email)) return res.status(400).json({ error: "Harus pakai alamat Gmail (@gmail.com)." });
-      if (users.some((u) => (u.email || "").toLowerCase() === email)) return res.status(409).json({ error: "Gmail ini sudah dipakai akun lain." });
-      await kirimOtp("login:" + uid, { ip }, email, "Masukkan kode ini untuk menautkan Gmail ke akun kamu.");
-      return res.json({ ok: true, email: mail.maskEmail(email) });
-    }
-    if (aksi === "login-ulang") {
-      const o = await kvStore.otpGet("login:" + uid);
-      const email = user.email || (o && o.email);
-      if (!email) return res.status(400).json({ error: "Isi Gmail dulu." });
-      await kirimOtp("login:" + uid, { ip }, email, "Ada login dari perangkat/IP baru. Masukkan kode ini untuk melanjutkan.");
-      return res.json({ ok: true });
-    }
-    if (aksi === "login-verif") {
-      const o = await cekOtp("login:" + uid, b.code);
-      if (!o) return res.status(400).json({ error: ERR_KODE });
-      if (!user.email) { user.email = o.email; user.emailVerified = true; }
-      return await lolosKeSesi(res, users, user, ip);
-    }
-    return res.status(400).json({ error: "Permintaan tidak dikenal." });
-  } catch (err) {
-    console.error("[auth-login/otp]", err.message);
-    return res.status(err.status || 500).json({ error: err.status ? err.message : "Gagal memproses / mengirim email: " + err.message });
-  }
-}
-
 module.exports = async (req, res) => {
   const aksi = req.query && req.query.aksi;
-
-  if (req.method === "GET" && aksi === "reg-info") {
-    try { return res.json({ bootstrap: !adaHC(await kvStore.getUsers()), needKey: !!process.env.HC_BOOTSTRAP_KEY }); }
-    catch (e) { return res.json({ bootstrap: false }); }
-  }
-  if (req.method === "POST" && /^(reg-|login-)/.test(String(aksi))) return handleOtpPost(req, res, aksi);
+  if (typeof aksi === "string" && aksi.startsWith("forum-")) return forum.handle(req, res, aksi);
 
   // Warga (login Discord)
   if (req.method === "GET") return handleWargaGet(req, res);
@@ -337,17 +220,12 @@ module.exports = async (req, res) => {
     return res.status(403).json({ error: "Akun kamu ditolak. Hubungi Perwira Tinggi." });
   }
 
-  // IP baru -> wajib kode Gmail. Akun lama tanpa Gmail diminta menautkan Gmail dulu.
-  const ip = mail.getIp(req);
   try {
-    if (!user.email) return res.json({ need: "bind", pre: makePre(user.id) });
-    if (!(user.knownIps || []).includes(ip)) {
-      await kirimOtp("login:" + user.id, { ip }, user.email, "Ada login dari perangkat/IP baru. Masukkan kode ini untuk melanjutkan.");
-      return res.json({ need: "code", pre: makePre(user.id), email: mail.maskEmail(user.email) });
-    }
-    await lolosKeSesi(res, users, user, ip);
+    setSessionCookie(res, user.id, SESSION_TTL_SEC);
   } catch (err) {
-    console.error("[auth-login] gagal:", err.message);
-    res.status(err.status || 500).json({ error: err.status ? err.message : "Gagal mengirim kode ke Gmail / membuat sesi: " + err.message });
+    console.error("[auth-login] gagal buat sesi:", err.message);
+    return res.status(500).json({ error: "Gagal membuat sesi login — cek SESSION_SECRET sudah diisi." });
   }
+
+  res.json({ ok: true, user: sanitizeUser(user) });
 };

@@ -91,7 +91,17 @@
 
   // ====== Render dashboard ======
   function tampil(d) {
-    const w = d.warga;
+    const w = d.warga, s = d.stat || { topik: 0, post: 0, warga: 0 }, me = d.saya || { post: 0, topik: 0 };
+    const feed = (t) => `
+      <div class="feed">
+        <div class="ico" data-k="${escW(t.kat)}">${svg(t.pin ? "pin" : t.kat)}</div>
+        <div class="fm">
+          <a class="ft" href="forum.html#/t/${escW(t.id)}">${escW(t.judul)}</a>
+          <div class="fs">${escW(t.katNama)} · terakhir oleh ${escW(t.nama)} · ${rel(t.tanggal)}</div>
+        </div>
+        <span class="chip" title="Jumlah balasan">${t.balasan} balasan</span>
+      </div>`;
+
     document.getElementById("isi").innerHTML = `
       <div class="hero">
         <div class="hero-banner" ${w.banner ? `style="background-image:url('${escW(w.banner)}')"` : w.accent ? `style="background:${escW(w.accent)}"` : ""}></div>
@@ -110,14 +120,57 @@
         </div>
       </div>
 
+      <div class="tiles">
+        <div class="tile" style="--i:0"><div class="ti">${svg("post")}</div><div><b>${me.post}</b><small>post kamu</small></div></div>
+        <div class="tile" style="--i:1"><div class="ti b">${svg("topik")}</div><div><b>${me.topik}</b><small>topik kamu</small></div></div>
+        <div class="tile" style="--i:2"><div class="ti g">${svg("warga")}</div><div><b>${s.warga}</b><small>warga terdaftar</small></div></div>
+        <div class="tile" style="--i:3"><div class="ti a">${svg("api")}</div><div><b>${s.post}</b><small>post di forum</small></div></div>
+      </div>
+
       ${d.iklan && d.iklan.length ? `
       <div class="panel"><div class="panel-h"><span>Papan Iklan</span></div>
         <div class="strip">${d.iklan.map((k) => `<div class="ad">${k.foto && String(k.foto).startsWith("http") ? `<img loading="lazy" src="${escW(k.foto)}" alt="">` : ""}${k.teks ? `<div>${escW(k.teks)}</div>` : ""}</div>`).join("")}</div>
       </div>` : ""}
 
-      <div class="panel">
-        <div class="panel-h"><span>Aksi Cepat</span></div>
-        <div class="quick"><a class="qa" href="profil.html"><span class="ico">${svg("edit")}</span><span>Ubah Profil<small>nama &amp; bio</small></span></a></div>
+      <div class="cols">
+        <div>
+          <div class="panel">
+            <div class="panel-h"><span>Pengumuman Resmi</span><a href="forum.html#/k/pengumuman">Lihat semua ›</a></div>
+            ${d.pengumuman && d.pengumuman.length ? d.pengumuman.map((a) => `
+              <div class="ann ${a.pin ? "pin" : ""}">
+                ${a.pin ? `<span class="chip">Disematkan</span> ` : ""}<span class="chip k">${rel(a.tanggal)}</span>
+                <a class="at" href="forum.html#/t/${escW(a.id)}">${escW(a.judul)}</a>
+                <p>${escW(a.cuplikan || "")}${(a.cuplikan || "").length >= 140 ? "…" : ""}</p>
+              </div>`).join("") : `<div class="kosong">Belum ada Announcement</div>`}
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><span>Lagi Ramai di Forum</span><a href="forum.html">Buka forum ›</a></div>
+            ${d.aktivitas && d.aktivitas.length ? d.aktivitas.map(feed).join("") : `<div class="kosong">Belum ada orang yang mengisi forum ini, silahkan anda yang jadi pertama!!</div>`}
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-h"><span>Aksi Cepat</span></div>
+            <div class="quick">
+              <a class="qa" href="forum.html#/k/saran"><span class="ico" data-k="saran">${svg("saran")}</span><span>Kasih Saran<small>ide buat kepolisian</small></span></a>
+              <a class="qa" href="forum.html#/k/kritik"><span class="ico" data-k="kritik">${svg("kritik")}</span><span>Sampaikan Kritik<small>keluhan &amp; evaluasi</small></span></a>
+              <a class="qa" href="forum.html#/k/tanya"><span class="ico" data-k="tanya">${svg("tanya")}</span><span>Tanya Jawab<small>Anda bingung cara kerja polisi?</small></span></a>
+              <a class="qa" href="profil.html"><span class="ico">${svg("edit")}</span><span>Ubah Profil<small>nama &amp; bio</small></span></a>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-h"><span>Kategori Forum</span></div>
+            ${(d.kategori || []).map((k) => `
+              <div class="feed">
+                <div class="ico" data-k="${escW(k.id)}">${svg(k.id)}</div>
+                <div class="fm"><a class="ft" href="forum.html#/k/${escW(k.id)}">${escW(k.nama)}</a><div class="fs">${escW(k.desk)}</div></div>
+                <span class="chip k">${k.topik}</span>
+              </div>`).join("")}
+          </div>
+        </div>
       </div>`;
 
     renderAvatarW(document.getElementById("h-ava"), w.nama, w.avatar);

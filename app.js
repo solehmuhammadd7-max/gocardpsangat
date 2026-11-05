@@ -129,17 +129,6 @@ function effectiveMulai(periodeMulai, bergabung) {
 // polri.go.id). Edit teksnya di sini kalau mau ganti pengumuman.
 const MARQUEE_TEXT = "Selamat datang di Website Kepolisian Nexotos roleplaying, Tolong ketika ingin laporan arrest record atau duty, dll.. isi yang benar ya temen-temen..";
 
-/* ====== Tema (pink / orange) ====== */
-function getTheme() {
-  try { return localStorage.getItem("theme") === "orange" ? "orange" : "pink"; } catch (e) { return "pink"; }
-}
-function applyTheme(t) {
-  document.documentElement.setAttribute("data-theme", t);
-  const m = document.querySelector('meta[name="theme-color"]');
-  if (m) m.setAttribute("content", t === "orange" ? "#ea580c" : "#db2777");
-}
-applyTheme(getTheme());
-
 /* ====== Navbar ====== */
 function renderNavbar(activePage, user) {
   const mount = document.getElementById("navbar-mount");
@@ -155,6 +144,7 @@ function renderNavbar(activePage, user) {
     ["undang-undang.html", "Undang-Undang", "undang-undang"],
     ["arrest-record.html", "Arrest Record", "arrest-record"],
     ["struktur.html", "Struktur Anggota", "struktur"],
+    ["forum.html", "Kritik & Saran", "forum"],
   ];
   const navLinksHtml = navItems.map(([href, label, page]) => linkOrSpan(href, label, page)).join("");
   const navMenuLinksHtml = navItems.map(([href, label, page]) => linkOrSpan(href, label, page)).join("");
@@ -173,11 +163,10 @@ function renderNavbar(activePage, user) {
           <div class="rank">${user.pangkat}${user.isHighCommand ? " · High Command" : ""}</div>
         </div>
         <div class="avatar">${user.avatar ? "" : initials}</div>
-        <div id="profile-menu">
-          <button class="pm-item" id="menu-pengaturan-profil">Pengaturan Profil</button>
-          <button class="pm-item" id="menu-ganti-password">Ganti Password</button>
-          <button class="pm-item" id="menu-tema">Tema: ${getTheme() === "pink" ? "Pink 🌸 → Orens" : "Orens 🍊 → Pink"}</button>
-          <button class="pm-item danger" id="menu-logout">Logout</button>
+        <div id="profile-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:var(--card,#1e293b);border:1px solid var(--border,#334155);border-radius:10px;overflow:hidden;min-width:170px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3)">
+          <button id="menu-pengaturan-profil" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px">Pengaturan Profil</button>
+          <button id="menu-ganti-password" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px;border-top:1px solid var(--border,#334155)">Ganti Password</button>
+          <button id="menu-logout" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px;border-top:1px solid var(--border,#334155)">Logout</button>
         </div>
       </div>
     </div>
@@ -231,12 +220,6 @@ function renderNavbar(activePage, user) {
     navMenu.classList.remove("open");
   });
 
-  document.getElementById("menu-tema").addEventListener("click", () => {
-    const next = getTheme() === "pink" ? "orange" : "pink";
-    try { localStorage.setItem("theme", next); } catch (e) { /* abaikan */ }
-    applyTheme(next);
-    document.getElementById("menu-tema").textContent = next === "pink" ? "Tema: Pink 🌸 → Orens" : "Tema: Orens 🍊 → Pink";
-  });
   document.getElementById("menu-logout").addEventListener("click", async () => {
     try { await api("/api/logout", { method: "POST" }); } catch (e) { /* tetap lanjut ke login */ }
     window.location.href = "index.html";
@@ -300,7 +283,7 @@ function openProfileSettingsModal(user) {
           <button type="button" class="btn-link" id="ps-avatar-remove" style="display:none">Hapus Foto</button>
         </div>
         <div class="form-group"><label for="ps-nama">Nama Karakter</label><input type="text" id="ps-nama" placeholder="nama character kamu" maxlength="100"></div>
-        <div class="form-group"><label for="ps-bio">Bio</label><textarea id="ps-bio" maxlength="300" placeholder="cerita singkat tentang karakter kamu..." style="min-height:74px"></textarea></div>
+        <div class="form-group"><label for="ps-bio">Bio <span style="font-weight:400;color:var(--faint)">(tampil di forum)</span></label><textarea id="ps-bio" maxlength="300" placeholder="cerita singkat tentang karakter kamu..." style="min-height:74px"></textarea></div>
         <div class="error-msg" id="ps-error"></div>
         <div class="sub" id="ps-success" style="color:#22c55e;display:none;margin-bottom:8px">Profil berhasil diperbarui.</div>
         <div style="display:flex;gap:8px;justify-content:center">
@@ -471,7 +454,7 @@ function renderWargaNavbar(active, w) {
   mount.innerHTML = `
     <div class="navbar">
       <div class="brand"><span class="flag">${LOGO_SVG}</span> kepolisian nexotis</div>
-      <nav id="nav-links" style="display:flex">${item("warga.html", "Beranda", "beranda")}${item("profil.html", "Profil Saya", "profil")}</nav>
+      <nav id="nav-links" style="display:flex">${item("warga.html", "Beranda", "beranda")}${item("forum.html", "Forum", "forum")}${item("profil.html", "Profil Saya", "profil")}</nav>
       <div class="user">
         <div class="info"><div class="name">${escW(w.nama)}</div><div class="rank">${renderLabels(w.labels.slice(0, 1), true)}</div></div>
         <div class="avatar" id="w-nav-avatar"></div>
@@ -484,45 +467,3 @@ function renderWargaNavbar(active, w) {
     window.location.href = "index.html";
   });
 }
-
-// Tombol "Lihat/Sembunyi" untuk input password di halaman login & daftar.
-document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".auth-card input[type=password]").forEach((i) => {
-    const w = document.createElement("div"); w.className = "pw-wrap";
-    i.parentNode.insertBefore(w, i); w.appendChild(i);
-    const b = document.createElement("button"); b.type = "button"; b.textContent = "Lihat";
-    b.onclick = () => { const s = i.type === "password"; i.type = s ? "text" : "password"; b.textContent = s ? "Sembunyi" : "Lihat"; };
-    w.appendChild(b);
-  });
-});
-
-// Efek hitung naik (count-up) untuk angka statistik. Ringan: 1 observer + requestAnimationFrame.
-(function () {
-  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const SEL = ".pill .num, .stat-card .value, .tile b";
-  function run(el) {
-    const raw = el.textContent;
-    if (el.dataset.cuAnim || el.dataset.cu === raw) return;
-    const m = raw.match(/-?\d+(?:[.,]\d+)?/);
-    el.dataset.cu = raw;
-    if (!m) return;
-    const target = parseFloat(m[0].replace(",", "."));
-    if (!isFinite(target) || target === 0) return;
-    const dec = (m[0].split(/[.,]/)[1] || "").length, pre = raw.slice(0, m.index), suf = raw.slice(m.index + m[0].length);
-    el.dataset.cuAnim = "1";
-    const t0 = performance.now(), D = 800;
-    (function f(t) {
-      const k = Math.min(1, (t - t0) / D), e = 1 - Math.pow(1 - k, 3);
-      if (k < 1) { el.textContent = pre + (target * e).toFixed(dec) + suf; requestAnimationFrame(f); }
-      else { el.textContent = raw; delete el.dataset.cuAnim; }
-    })(t0);
-  }
-  new MutationObserver((ms) => {
-    const seen = new Set();
-    ms.forEach((mu) => {
-      const n = mu.target.nodeType === 3 ? mu.target.parentElement : mu.target;
-      const el = n && n.closest && n.closest(SEL);
-      if (el && !seen.has(el)) { seen.add(el); run(el); }
-    });
-  }).observe(document.documentElement, { subtree: true, childList: true, characterData: true });
-})();

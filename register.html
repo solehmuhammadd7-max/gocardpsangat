@@ -1,84 +1,78 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#db2777">
-  <title>Kepolisian Nexotis - Daftar</title>
-  <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kepolisian Nexotis - Daftar Akun</title>
+    <link rel="manifest" href="./manifest.json">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="auth">
-    <div class="bg"><span class="siren"></span><b class="blob b1"></b><b class="blob b2"></b><div class="parts"><i style="left:43%;--s:5px;--t:15s;--d:-10s"></i><i style="left:8%;--s:4px;--t:17s;--d:-1s"></i><i style="left:48%;--s:8px;--t:9s;--d:-14s"></i><i style="left:66%;--s:5px;--t:9s;--d:-1s"></i><i style="left:57%;--s:7px;--t:10s;--d:-3s"></i><i style="left:13%;--s:8px;--t:15s;--d:-0s"></i><i style="left:74%;--s:4px;--t:12s;--d:-10s"></i><i style="left:82%;--s:8px;--t:9s;--d:-9s"></i></div></div>
-    <main class="auth-main">
-    <div class="auth-card">
-      <div class="brand-top"><div class="shield"><svg class="logo-svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div><div class="bt"><small>KEPOLISIAN</small><strong>NEXOTIS</strong></div></div>
-      <h1>Buat Akun</h1>
-      <div class="sub">Daftar dengan Gmail, lalu verifikasi dengan kode 6 digit.</div>
-      <div id="step-form">
-        <p>Daftar dengan Gmail. Kode verifikasi akan dikirim ke Gmail kamu, lalu akun menunggu approval Perwira Tinggi.</p>
-        <div class="form-group" style="text-align:left"><label for="reg-username">Username</label>
-          <input type="text" id="reg-username" placeholder="username buat login" autocomplete="username"></div>
-        <div class="form-group" style="text-align:left"><label for="reg-email">Gmail</label>
-          <input type="email" id="reg-email" placeholder="nama@gmail.com" autocomplete="email"></div>
-        <div class="form-group" style="text-align:left"><label for="reg-password">Password</label>
-          <input type="password" id="reg-password" placeholder="minimal 6 karakter" autocomplete="new-password"></div>
-        <div class="form-group" style="text-align:left"><label for="reg-nama">Nama Karakter</label>
-          <input type="text" id="reg-nama" placeholder="nama character kamu"></div>
-        <div class="form-group" style="text-align:left"><label for="reg-pangkat">Pangkat yang Diajukan</label>
-          <select id="reg-pangkat"></select></div>
-        <div class="hc-box" id="hc-box" style="display:none">
-          <label><input type="checkbox" id="reg-hc"><span>Daftar sebagai High Command (sementara)<small>Langsung aktif tanpa approval. Kotak ini hilang otomatis setelah ada High Command.</small></span></label>
-          <div id="hc-key-wrap" style="display:none;margin-top:10px"><input type="password" id="reg-hckey" placeholder="Kode HC"></div>
-        </div>
-        <button class="btn btn-primary" style="width:100%" id="register-btn">Kirim Kode ke Gmail</button>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="flag"><svg class="logo-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
+      <h1>DAFTAR AKUN BARU</h1>
+      <p>Akun kamu perlu di approve Perwira tinggi dulu sebelum bisa login.</p>
+  
+      <div class="form-group" style="text-align:left">
+        <label for="reg-username">Username</label>
+        <input type="text" id="reg-username" placeholder="username buat login" autocomplete="username">
       </div>
-
-      <div id="step-code" style="display:none">
-        <p id="code-info"></p>
-        <div class="form-group"><input type="text" id="code" class="kode-input" inputmode="numeric" maxlength="6" placeholder="------" autocomplete="one-time-code"></div>
-        <button class="btn btn-primary" style="width:100%" id="code-btn">Verifikasi & Daftar</button>
-        <div style="margin-top:10px"><button class="link-btn" id="resend-btn">Kirim ulang kode</button> <button class="link-btn" id="back-btn">Ubah data</button></div>
+      <div class="form-group" style="text-align:left">
+        <label for="reg-password">Password</label>
+        <input type="password" id="reg-password" placeholder="minimal 6 karakter" autocomplete="new-password">
       </div>
-
+      <div class="form-group" style="text-align:left">
+        <label for="reg-nama">Nama Karakter Kamu</label>
+        <input type="text" id="reg-nama" placeholder="nama character kamu">
+      </div>
+      <div class="form-group" style="text-align:left">
+        <label for="reg-pangkat">Pangkat yang Diajukan</label>
+        <select id="reg-pangkat"></select>
+      </div>
+      <button class="btn btn-primary" style="width:100%" id="register-btn">Daftar</button>
       <div class="error-msg" id="error-msg"></div>
-      <div class="ok-msg" id="ok-msg"></div>
-      <div class="foot">Sudah punya akun? <a href="index.html" class="link-btn">Masuk di sini</a></div>
+      <div class="foot">Sudah punya akun? <a href="index.html" style="color: red; font-weight: bold;">Masuk di sini</a></div>
     </div>
-    </main>
   </div>
 
 <script src="app.js"></script>
 <script>
-  const $ = (id) => document.getElementById(id);
-  $("reg-pangkat").innerHTML = PANGKAT_LIST.map((p) => `<option value="${p}">${p}</option>`).join("");
-  $("reg-pangkat").value = PANGKAT_LIST[PANGKAT_LIST.length - 1];
-  const post = (aksi, body) => api("/api/auth-login?aksi=" + aksi, { method: "POST", body: JSON.stringify(body) });
-  let data = null, needKey = false;
-  api("/api/auth-login?aksi=reg-info").then((i) => { if (i.bootstrap) { $("hc-box").style.display = "block"; needKey = !!i.needKey; } }).catch(() => {});
-  $("reg-hc").onchange = () => { $("hc-key-wrap").style.display = $("reg-hc").checked && needKey ? "block" : "none"; };
-  async function busy(btn, label, fn) {
-    const old = btn.textContent; btn.disabled = true; btn.textContent = label; $("error-msg").textContent = ""; $("ok-msg").textContent = "";
-    try { await fn(); } catch (e) { $("error-msg").textContent = e.message; } finally { btn.disabled = false; btn.textContent = old; }
-  }
-  function step(s) { $("step-form").style.display = s === "form" ? "block" : "none"; $("step-code").style.display = s === "code" ? "block" : "none"; }
+  const pangkatSelect = document.getElementById("reg-pangkat");
+  pangkatSelect.innerHTML = PANGKAT_LIST.map((p) => `<option value="${p}">${p}</option>`).join("");
+  pangkatSelect.value = PANGKAT_LIST[PANGKAT_LIST.length - 1]; // default: pangkat terendah
 
-  $("register-btn").onclick = () => busy($("register-btn"), "Mengirim kode...", async () => {
-    data = { username: $("reg-username").value.trim(), email: $("reg-email").value.trim(), password: $("reg-password").value, namaKarakter: $("reg-nama").value.trim(), pangkat: $("reg-pangkat").value, hc: $("reg-hc").checked, hcKey: $("reg-hckey").value };
-    if (!data.username || !data.email || !data.password) throw new Error("Username, Gmail, dan password wajib diisi.");
-    await post("reg-kirim", data);
-    $("code-info").textContent = "Kode 6 digit sudah dikirim ke " + data.email + ". Berlaku 10 menit.";
-    step("code"); $("code").value = ""; $("code").focus();
-  });
-  $("code-btn").onclick = () => busy($("code-btn"), "Memeriksa...", async () => {
-    const v = await post("reg-verif", { email: data.email, code: $("code").value.trim() });
-    step("form"); ["reg-username", "reg-email", "reg-password", "reg-nama"].forEach((i) => $(i).value = "");
-    if (v.hc) { $("hc-box").style.display = "none"; $("ok-msg").textContent = "Akun High Command aktif! Silakan login."; return; }
-    $("ok-msg").textContent = "Gmail terverifikasi! Pendaftaran terkirim, tunggu approval Perwira Tinggi sebelum bisa login.";
-  });
-  $("resend-btn").onclick = () => busy($("resend-btn"), "Mengirim...", async () => { await post("reg-kirim", data); $("ok-msg").textContent = "Kode baru sudah dikirim."; });
-  $("back-btn").onclick = () => step("form");
+  document.getElementById("register-btn").addEventListener("click", doRegister);
+
+  async function doRegister() {
+    const errorEl = document.getElementById("error-msg");
+    errorEl.style.color = "";
+    errorEl.textContent = "";
+    const username = document.getElementById("reg-username").value.trim();
+    const password = document.getElementById("reg-password").value;
+    const namaKarakter = document.getElementById("reg-nama").value.trim();
+    const pangkat = pangkatSelect.value;
+
+    if (!username || !password) { errorEl.textContent = "Username Dan password wajib diisi."; return; }
+    if (password.length < 6) { errorEl.textContent = "Password minimal 6 karakter."; return; }
+
+    const btn = document.getElementById("register-btn");
+    btn.disabled = true; btn.textContent = "Mendaftar...";
+    try {
+      await api("/api/auth-login", { method: "POST", body: JSON.stringify({ daftar: true, username, password, namaKarakter, pangkat }) });
+      errorEl.style.color = "var(--green)";
+      errorEl.textContent = "Pendaftaran berhasil dikirim! Tunggu approval dari Perwira Tinggi sebelum bisa login.";
+      document.getElementById("reg-username").value = "";
+      document.getElementById("reg-password").value = "";
+      document.getElementById("reg-nama").value = "";
+      pangkatSelect.value = PANGKAT_LIST[PANGKAT_LIST.length - 1];
+    } catch (e) {
+      errorEl.style.color = "";
+      errorEl.textContent = e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = "Daftar";
+    }
+  }
 </script>
 </body>
 </html>
