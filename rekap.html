@@ -76,7 +76,7 @@
       <div class="sub" style="margin-bottom:10px">Akun yang baru daftar sendiri (belum di-approve) muncul di sini.</div>
       <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>Username</th><th>Nama Karakter</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>Username</th><th>Nama Karakter</th><th>Pangkat Diajukan</th><th>Aksi</th></tr></thead>
           <tbody id="pendaftaran-body"></tbody>
         </table>
       </div>
@@ -459,20 +459,25 @@
     }
   }
 
+  function escPend(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
   function refreshPendaftaran() {
     const tbody = document.getElementById("pendaftaran-body");
     const pending = (allUsers || []).filter((u) => u.status === "pending");
     tbody.innerHTML = pending.length
       ? pending.map((u) => `
         <tr>
-          <td>${u.username}</td>
-          <td>${u.namaKarakter || "-"}</td>
+          <td>${escPend(u.username)}</td>
+          <td>${escPend(u.namaKarakter || "-")}</td>
+          <td>${escPend(u.pangkat || "-")}</td>
           <td style="display:flex;gap:6px">
             <button class="btn btn-primary" style="padding:5px 10px;font-size:11px" onclick="setujuPendaftaran('${u.id}','${u.username.replace(/'/g, "\\'")}')">Setujui</button>
             <button class="btn btn-secondary" style="padding:5px 10px;font-size:11px" onclick="tolakPendaftaran('${u.id}','${u.username.replace(/'/g, "\\'")}')">Tolak</button>
           </td>
         </tr>`).join("")
-      : `<tr><td colspan="3" class="empty">Tidak ada pendaftaran menunggu approval.</td></tr>`;
+      : `<tr><td colspan="4" class="empty">Tidak ada pendaftaran menunggu approval.</td></tr>`;
   }
 
   async function setujuPendaftaran(id, username) {

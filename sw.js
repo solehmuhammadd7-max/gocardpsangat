@@ -1,6 +1,7 @@
-const CACHE_NAME = "nexotis-shell-v2";
+const CACHE_NAME = "nexotis-shell-v3";
 const SHELL_FILES = [
   "./index.html",
+  "./register.html",
   "./dashboard.html",
   "./rekap.html",
   "./warga.html",

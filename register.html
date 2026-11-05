@@ -12,11 +12,11 @@
     <div class="login-card">
       <div class="flag"><svg class="logo-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg></div>
       <h1>DAFTAR AKUN BARU</h1>
-      <p>Akun kamu perlu di approve Perwira tinggi dulu sebelum bisa login.</p>
+      <p>Akun kamu perlu di-approve High Command dulu sebelum bisa login.</p>
   
       <div class="form-group" style="text-align:left">
         <label for="reg-username">Username</label>
-        <input type="text" id="reg-username" placeholder="username buat login" autocomplete="username">
+        <input type="text" id="reg-username" placeholder="3-24 karakter, huruf/angka/_ . -" autocomplete="username">
       </div>
       <div class="form-group" style="text-align:left">
         <label for="reg-password">Password</label>
@@ -53,7 +53,8 @@
     const namaKarakter = document.getElementById("reg-nama").value.trim();
     const pangkat = pangkatSelect.value;
 
-    if (!username || !password) { errorEl.textContent = "Username Dan password wajib diisi."; return; }
+    if (!/^[A-Za-z0-9_.-]{3,24}$/.test(username)) { errorEl.textContent = "Username 3-24 karakter: huruf, angka, titik, strip, atau underscore."; return; }
+    if (!namaKarakter) { errorEl.textContent = "Nama karakter wajib diisi."; return; }
     if (password.length < 6) { errorEl.textContent = "Password minimal 6 karakter."; return; }
 
     const btn = document.getElementById("register-btn");
@@ -61,7 +62,7 @@
     try {
       await api("/api/auth-login", { method: "POST", body: JSON.stringify({ daftar: true, username, password, namaKarakter, pangkat }) });
       errorEl.style.color = "var(--green)";
-      errorEl.textContent = "Pendaftaran berhasil dikirim! Tunggu approval dari Perwira Tinggi sebelum bisa login.";
+      errorEl.textContent = "Pendaftaran berhasil dikirim! Tunggu approval High Command sebelum bisa login.";
       document.getElementById("reg-username").value = "";
       document.getElementById("reg-password").value = "";
       document.getElementById("reg-nama").value = "";
