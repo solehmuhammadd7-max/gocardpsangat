@@ -3,7 +3,7 @@
 //   const LOGO_URL = "https://i.imgur.com/abcd123.png";
 // (harus link "i.imgur.com/....png/jpg", bukan link halaman imgur.com/a/...)
 // Kosong / gagal dimuat = otomatis pakai lencana SVG bawaan.
-const LOGO_URL = "";
+const LOGO_URL = "https://i.imgur.com/LqH5Ain.png";
 
 const LOGO_FALLBACK_SVG = '<svg class="logo-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M12 8.2l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z" fill="currentColor" stroke="none"/></svg>';
 const LOGO_SVG = LOGO_URL
