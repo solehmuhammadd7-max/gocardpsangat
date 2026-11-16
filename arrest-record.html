@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Arrest Record - Kepolisian Nexotis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +14,7 @@
 
   <div class="container">
     <div class="card">
-      <h2>🚔 Buat Arrest Record Baru</h2>
+      <h2>Buat Arrest Record Baru</h2>
       <div class="sub">Semua anggota bisa bikin berkas. Edit &amp; hapus cuma bisa dilakukan High Command.</div>
 
       <h3 style="font-size:13px;color:var(--red);margin:16px 0 8px">Informasi Petugas</h3>
@@ -79,7 +82,7 @@
       <h3 style="font-size:13px;color:var(--red);margin:16px 0 8px">Foto KTP Tersangka</h3>
       <div class="form-group">
         <div id="ktp-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;">
-          <div style="font-size:24px;margin-bottom:6px">🪪</div>
+          <div class="dz-wrap"><svg class="dz-ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
           <div style="font-size:12px;color:var(--muted)">Klik untuk pilih atau CTRL+V buat paste foto KTP (maks. 2)</div>
           <input type="file" id="ktp-input" accept="image/*" multiple style="display:none">
         </div>
@@ -94,7 +97,7 @@
     </div>
 
     <div class="card">
-      <h2>📋 Daftar Arrest Record</h2>
+      <h2>Daftar Arrest Record</h2>
       <div class="form-group">
         <input type="text" id="arrest-search" placeholder="Cari nama tersangka atau petugas...">
       </div>

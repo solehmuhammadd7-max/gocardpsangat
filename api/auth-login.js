@@ -6,7 +6,6 @@ const { notifyPendaftaranBaru } = require("../lib/discord");
 const { setSessionCookie, sanitizeUser } = require("../lib/auth");
 const crypto = require("crypto");
 const warga = require("../lib/warga");
-const forum = require("../lib/forum");
 
 const SESSION_TTL_SEC = 12 * 60 * 60;
 
@@ -32,16 +31,15 @@ async function handleWargaGet(req, res) {
     return res.json({ warga: warga.sanitizeWarga(w), iklan });
   }
 
-  // Data dashboard warga: profil + iklan + ringkasan forum (stat, pengumuman, aktivitas).
+  // Data dashboard warga: profil + iklan.
   if (q.aksi === "warga-beranda") {
     let w;
     try { w = await warga.getWargaFromReq(req); }
     catch (err) { return res.status(500).json({ error: "Gagal konek ke database." }); }
     if (!w) return res.status(401).json({ error: "Belum login." });
-    let iklan = [], ring = {};
+    let iklan = [];
     try { iklan = await kvStore.getIklan(); } catch (e) { /* opsional */ }
-    try { ring = await forum.beranda(w); } catch (e) { console.error("[beranda]", e.message); }
-    return res.json({ warga: warga.sanitizeWarga(w), iklan, ...ring });
+    return res.json({ warga: warga.sanitizeWarga(w), iklan });
   }
 
   return res.status(400).json({ error: "Permintaan tidak dikenal." });
@@ -49,9 +47,6 @@ async function handleWargaGet(req, res) {
 
 
 module.exports = async (req, res) => {
-  const aksi = req.query && req.query.aksi;
-  if (typeof aksi === "string" && aksi.startsWith("forum-")) return forum.handle(req, res, aksi);
-
   // Warga (login Discord)
   if (req.method === "GET") return handleWargaGet(req, res);
   if (req.method === "POST" && req.query && req.query.aksi === "warga-logout") {

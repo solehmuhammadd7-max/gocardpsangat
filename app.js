@@ -127,7 +127,7 @@ function effectiveMulai(periodeMulai, bergabung) {
 
 // Teks berjalan di bawah navbar — gaya kayak website instansi resmi (mis.
 // polri.go.id). Edit teksnya di sini kalau mau ganti pengumuman.
-const MARQUEE_TEXT = "Selamat datang di Website Kepolisian Nexotos roleplaying, Tolong ketika ingin laporan arrest record atau duty, dll.. isi yang benar ya temen-temen..";
+const MARQUEE_TEXT = "Selamat datang di Website Kepolisian Nexotis roleplaying, Tolong ketika ingin laporan arrest record atau duty, dll.. isi yang benar ya temen-temen..";
 
 /* ====== Navbar ====== */
 function renderNavbar(activePage, user) {
@@ -144,38 +144,41 @@ function renderNavbar(activePage, user) {
     ["undang-undang.html", "Undang-Undang", "undang-undang"],
     ["arrest-record.html", "Arrest Record", "arrest-record"],
     ["struktur.html", "Struktur Anggota", "struktur"],
-    ["forum.html", "Kritik & Saran", "forum"],
   ];
   const navLinksHtml = navItems.map(([href, label, page]) => linkOrSpan(href, label, page)).join("");
   const navMenuLinksHtml = navItems.map(([href, label, page]) => linkOrSpan(href, label, page)).join("");
 
   mount.innerHTML = `
-    <div class="navbar">
-      <div class="brand"><span class="flag">${LOGO_SVG}</span> kepolisian nexotis</div>
-      <nav id="nav-links">${navLinksHtml}</nav>
-      <div class="nav-toggle-wrap" id="nav-toggle" style="display:none">
-        <button type="button" aria-label="Buka menu navigasi" id="nav-toggle-btn">&#8942;</button>
-        <div id="nav-menu">${navMenuLinksHtml}</div>
-      </div>
-      <div class="user" id="profile-toggle" style="position:relative;cursor:pointer">
-        <div class="info">
-          <div class="name">${user.username}</div>
-          <div class="rank">${user.pangkat}${user.isHighCommand ? " · High Command" : ""}</div>
+    <header class="site-header">
+      <div class="siren" aria-hidden="true"></div>
+      <div class="navbar">
+        <div class="brand"><span class="flag">${LOGO_SVG}</span><span class="brand-name">kepolisian nexotis</span></div>
+        <nav id="nav-links">${navLinksHtml}</nav>
+        <nav class="nav-measure" id="nav-measure" aria-hidden="true">${navLinksHtml}</nav>
+        <div class="nav-toggle-wrap" id="nav-toggle" style="display:none">
+          <button type="button" aria-label="Buka menu navigasi" id="nav-toggle-btn"><span></span><span></span><span></span></button>
+          <div id="nav-menu">${navMenuLinksHtml}</div>
         </div>
-        <div class="avatar">${user.avatar ? "" : initials}</div>
-        <div id="profile-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:8px;background:var(--card,#1e293b);border:1px solid var(--border,#334155);border-radius:10px;overflow:hidden;min-width:170px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3)">
-          <button id="menu-pengaturan-profil" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px">Pengaturan Profil</button>
-          <button id="menu-ganti-password" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px;border-top:1px solid var(--border,#334155)">Ganti Password</button>
-          <button id="menu-logout" style="display:block;width:100%;text-align:left;padding:10px 14px;background:none;border:none;color:inherit;cursor:pointer;font-size:13px;border-top:1px solid var(--border,#334155)">Logout</button>
+        <div class="user" id="profile-toggle" style="position:relative;cursor:pointer">
+          <div class="info">
+            <div class="name">${user.username}</div>
+            <div class="rank">${user.pangkat}${user.isHighCommand ? " · High Command" : ""}</div>
+          </div>
+          <div class="avatar">${user.avatar ? "" : initials}</div>
+          <div id="profile-menu" style="display:none">
+            <button id="menu-pengaturan-profil">Pengaturan Profil</button>
+            <button id="menu-ganti-password">Ganti Password</button>
+            <button id="menu-logout">Logout</button>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="marquee-bar">
-      <div class="marquee-track">
-        <span class="marquee-text">${MARQUEE_TEXT}</span>
-        <span class="marquee-text">${MARQUEE_TEXT}</span>
+      <div class="marquee-bar">
+        <div class="marquee-track">
+          <span class="marquee-text">${MARQUEE_TEXT}</span>
+          <span class="marquee-text">${MARQUEE_TEXT}</span>
+        </div>
       </div>
-    </div>`;
+    </header>`;
   if (user.avatar) {
     const av = mount.querySelector(".avatar");
     av.style.backgroundImage = `url('${user.avatar}')`;
@@ -187,19 +190,26 @@ function renderNavbar(activePage, user) {
   const navToggleWrap = document.getElementById("nav-toggle");
   const navMenu = document.getElementById("nav-menu");
 
-  // Cek apakah tab nav muat di lebar navbar. Kalau kepanjangan, sembunyikan
-  // tab-nya dan tampilkan tombol titik-tiga merah sebagai gantinya.
+  // Menu tab vs tombol tiga-garis. Lebar asli semua tab diukur dari salinan
+  // tersembunyi (#nav-measure), jadi hasilnya nggak bergantung pada kondisi
+  // tampilan saat ini — nggak ada lagi "kedip-kedip" bolak-balik pas di-zoom.
+  const brandEl = mount.querySelector(".brand");
+  const userEl = document.getElementById("profile-toggle");
+  const measureEl = document.getElementById("nav-measure");
   function checkNavOverflow() {
-    navToggleWrap.style.display = "none";
-    navLinksEl.style.display = "flex";
-    const overflowing = navLinksEl.scrollWidth > navLinksEl.clientWidth + 1;
-    if (overflowing) {
-      navLinksEl.style.display = "none";
-      navToggleWrap.style.display = "inline-block";
-    }
+    const cs = getComputedStyle(navbarEl);
+    const pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const gap = parseFloat(cs.columnGap) || 12;
+    const avail = navbarEl.clientWidth - pad - brandEl.offsetWidth - userEl.offsetWidth - gap * 2;
+    const collapse = measureEl.offsetWidth > avail;
+    navLinksEl.style.display = collapse ? "none" : "flex";
+    navToggleWrap.style.display = collapse ? "block" : "none";
+    if (!collapse) navMenu.classList.remove("open");
   }
   checkNavOverflow();
+  if (window.ResizeObserver) new ResizeObserver(checkNavOverflow).observe(navbarEl);
   window.addEventListener("resize", checkNavOverflow);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(checkNavOverflow);
 
   const navToggleBtn = document.getElementById("nav-toggle-btn");
   navToggleBtn.addEventListener("click", (e) => {
@@ -283,7 +293,7 @@ function openProfileSettingsModal(user) {
           <button type="button" class="btn-link" id="ps-avatar-remove" style="display:none">Hapus Foto</button>
         </div>
         <div class="form-group"><label for="ps-nama">Nama Karakter</label><input type="text" id="ps-nama" placeholder="nama character kamu" maxlength="100"></div>
-        <div class="form-group"><label for="ps-bio">Bio <span style="font-weight:400;color:var(--faint)">(tampil di forum)</span></label><textarea id="ps-bio" maxlength="300" placeholder="cerita singkat tentang karakter kamu..." style="min-height:74px"></textarea></div>
+        <div class="form-group"><label for="ps-bio">Bio <span style="font-weight:400;color:var(--faint)">(tampil di profil)</span></label><textarea id="ps-bio" maxlength="300" placeholder="cerita singkat tentang karakter kamu..." style="min-height:74px"></textarea></div>
         <div class="error-msg" id="ps-error"></div>
         <div class="sub" id="ps-success" style="color:#22c55e;display:none;margin-bottom:8px">Profil berhasil diperbarui.</div>
         <div style="display:flex;gap:8px;justify-content:center">
@@ -452,18 +462,64 @@ function renderWargaNavbar(active, w) {
   if (!mount) return;
   const item = (href, label, key) => active === key ? `<span class="active">${label}</span>` : `<a href="${href}">${label}</a>`;
   mount.innerHTML = `
+    <header class="site-header"><div class="siren" aria-hidden="true"></div>
     <div class="navbar">
-      <div class="brand"><span class="flag">${LOGO_SVG}</span> kepolisian nexotis</div>
-      <nav id="nav-links" style="display:flex">${item("warga.html", "Beranda", "beranda")}${item("forum.html", "Forum", "forum")}${item("profil.html", "Profil Saya", "profil")}</nav>
+      <div class="brand"><span class="flag">${LOGO_SVG}</span><span class="brand-name">kepolisian nexotis</span></div>
+      <nav id="nav-links" style="display:flex">${item("warga.html", "Beranda", "beranda")}${item("profil.html", "Profil Saya", "profil")}</nav>
       <div class="user">
         <div class="info"><div class="name">${escW(w.nama)}</div><div class="rank">${renderLabels(w.labels.slice(0, 1), true)}</div></div>
         <div class="avatar" id="w-nav-avatar"></div>
         <button class="btn btn-secondary" id="logout-btn" style="margin-left:6px;padding:7px 12px">Logout</button>
       </div>
-    </div>`;
+    </div></header>`;
   renderAvatarW(document.getElementById("w-nav-avatar"), w.nama, w.avatar);
   document.getElementById("logout-btn").addEventListener("click", async () => {
     try { await api("/api/auth-login?aksi=warga-logout", { method: "POST" }); } catch (e) { /* lanjut */ }
     window.location.href = "index.html";
   });
 }
+
+
+/* ====== Efek halus: angka statistik naik pelan-pelan (count-up) ======
+   Cuma jalan di angka yang berubah dari nilai sebelumnya (mis. data baru
+   selesai dimuat). Mati otomatis kalau perangkat set "kurangi gerakan". */
+(function () {
+  if (!window.matchMedia || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const SEL = ".stat-card .value, .pill .num, .tile b";
+  const RE = /^(\s*)(\d+(?:[.,]\d{1,2})?)([\s\S]*)$/;
+
+  function run(el) {
+    const txt = el.textContent;
+    const st = el._cu || (el._cu = { final: null, running: false, raf: 0 });
+    if (st.running || txt === st.final) return;        // tulisan kita sendiri / nilai sama
+    const m = txt.match(RE);
+    if (!m) { st.final = txt; return; }
+    const raw = m[2], dec = (raw.split(/[.,]/)[1] || "").length, sep = raw.includes(",") ? "," : ".";
+    const target = parseFloat(raw.replace(",", "."));
+    if (!isFinite(target) || target === 0) { st.final = txt; return; }
+    st.final = txt; st.running = true;
+    const t0 = performance.now(), dur = 750;
+    (function frame(now) {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      const v = (target * e).toFixed(dec).replace(".", sep);
+      el.textContent = p < 1 ? m[1] + v + m[3] : txt;
+      if (p < 1) st.raf = requestAnimationFrame(frame);
+      else st.running = false;
+    })(t0);
+  }
+
+  function start() {
+    new MutationObserver((list) => {
+      const seen = new Set();
+      list.forEach((mu) => {
+        const n = mu.target.nodeType === 3 ? mu.target.parentElement : mu.target;
+        if (!n || !n.closest) return;
+        const el = n.closest(SEL);
+        if (el) seen.add(el);
+        else if (n.querySelectorAll && mu.addedNodes.length) n.querySelectorAll(SEL).forEach((x) => seen.add(x));
+      });
+      seen.forEach(run);
+    }).observe(document.body, { childList: true, characterData: true, subtree: true });
+  }
+  if (document.body) start(); else document.addEventListener("DOMContentLoaded", start);
+})();

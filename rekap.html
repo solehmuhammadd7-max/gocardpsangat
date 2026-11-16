@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Panel Rekap - Kepolisian Nexotis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -33,7 +36,7 @@
 
     <div class="card" id="panel-rekap">
       <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
-        <button class="btn btn-secondary" id="rekap-pdf-btn">📄 Download PDF</button>
+        <button class="btn btn-secondary" id="rekap-pdf-btn">Download PDF</button>
       </div>
       <div style="overflow-x:auto">
         <table>
@@ -110,7 +113,7 @@
         <h2>Daftar Anggota</h2>
         <div class="bulk-actions">
           <div class="sub" id="bulk-count-label">Belum ada yang dipilih.</div>
-          <button class="btn btn-secondary" id="bulk-delete-btn" style="background:#7c2d12;color:#fed7aa" disabled>🗑️ Hapus Terpilih</button>
+          <button class="btn btn-secondary" id="bulk-delete-btn" style="background:#7c2d12;color:#fed7aa" disabled>Hapus Terpilih</button>
         </div>
         <div style="overflow-x:auto">
           <table>
@@ -134,7 +137,7 @@
         <div class="form-group">
           <label>Foto Iklan (opsional)</label>
           <div id="iklan-dropzone" style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .2s ease,background .2s ease;">
-            <div style="font-size:24px;margin-bottom:6px">🖼️</div>
+            <div class="dz-wrap"><svg class="dz-ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></div>
             <div style="font-size:12px;color:var(--muted)">Tarik &amp; lepas foto di sini, atau klik untuk pilih 1 foto</div>
             <input type="file" id="iklan-foto" accept="image/*" style="display:none">
           </div>
@@ -210,7 +213,7 @@
 
   <div class="modal-overlay" id="confirm-modal">
     <div class="modal-box">
-      <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+      <div class="warn-wrap"><svg class="warn-ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.5h.01"/></svg></div>
       <div style="font-weight:700;margin-bottom:6px">Reset semua duty?</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
         Ini akan menghapus SELURUH riwayat absensi semua anggota (hadir/izin/cuti) tanpa bisa dibatalkan.
@@ -225,7 +228,7 @@
 
   <div class="modal-overlay" id="confirm-gaji-modal">
     <div class="modal-box">
-      <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+      <div class="warn-wrap"><svg class="warn-ico" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.5h.01"/></svg></div>
       <div style="font-weight:700;margin-bottom:6px">Reset gaji semua anggota?</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:16px">
         Semua anggota bisa klaim gaji lagi mulai sekarang, walau minggu ini udah pernah klaim.
@@ -567,7 +570,7 @@
     } catch (e) {
       alert(e.message);
     } finally {
-      btn.textContent = "🗑️ Hapus Terpilih";
+      btn.textContent = "Hapus Terpilih";
       updateBulkUI();
     }
   });
@@ -674,7 +677,7 @@
     wrap.style.display = "block";
     wrap.innerHTML = `
       <img src="${currentFotoList[i]}" style="max-width:100%;max-height:65vh;border-radius:8px;border:1px solid var(--border);margin-bottom:10px;cursor:zoom-out" onclick="renderFotoGallery()">
-      <div style="margin-bottom:10px"><button class="btn btn-secondary" onclick="renderFotoGallery()">🔍 Zoom Out</button></div>`;
+      <div style="margin-bottom:10px"><button class="btn btn-secondary" onclick="renderFotoGallery()">Zoom Out</button></div>`;
   }
   document.getElementById("modal-close").addEventListener("click", () => document.getElementById("foto-modal").classList.remove("open"));
 

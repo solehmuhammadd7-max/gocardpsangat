@@ -5,11 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kepolisian Nexotis - Profil Me</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="navbar-mount">
-    <div class="navbar"><div class="brand"><span class="flag" id="nav-logo"></span> kepolisian nexotis</div></div>
+    <header class="site-header"><div class="navbar"><div class="brand"><span class="flag" id="nav-logo"></span><span class="brand-name">kepolisian nexotis</span></div></div></header>
   </div>
 
   <div class="wrap" id="wrap">
@@ -28,7 +31,7 @@
             <div class="hero-name" id="p-nama"></div>
             <div class="lbls" id="p-lbl"></div>
             <p class="hero-bio" id="p-bio"></p>
-            <div class="hero-meta">Pratinjau - begini profilmu terlihat oleh warga lain di forum.</div>
+            <div class="hero-meta">Pratinjau - begini profilmu terlihat oleh orang lain.</div>
           </div>
         </div>
       </div>
@@ -45,7 +48,7 @@
 
               <div class="form-group">
                 <label for="f-nama">Nama tampilan</label>
-                <input type="text" id="f-nama" maxlength="32" placeholder="nama yang tampil di forum" autocomplete="off">
+                <input type="text" id="f-nama" maxlength="32" placeholder="nama yang tampil di profil" autocomplete="off">
               </div>
 
               <div class="form-group" style="margin-bottom:6px">
@@ -114,7 +117,7 @@
     $("f-cnt").textContent = $("f-bio").value.length;
     renderAvatarW($("p-ava"), nama, W.avatar);
     $("f-nama").disabled = sinkron;
-    $("f-nama").placeholder = sinkron ? "ikut nama Discord" : "nama yang tampil di forum";
+    $("f-nama").placeholder = sinkron ? "ikut nama Discord" : "nama yang tampil di profil";
   }
 
   function isi(w) {
@@ -150,7 +153,7 @@
       const r = await api("/api/auth-login?aksi=warga-profil", { method: "POST", body: JSON.stringify(body) });
       isi(r.warga);
       renderWargaNavbar("profil", r.warga);
-      ok.textContent = "Tersimpan. Profil kamu sudah diperbarui di forum.";
+      ok.textContent = "Tersimpan. Profil kamu sudah diperbarui.";
     } catch (e) { err.textContent = e.message; }
     finally { btn.disabled = false; btn.textContent = "Simpan Perubahan"; }
   });
