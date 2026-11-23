@@ -7,11 +7,10 @@
     // Target tahun baru: 1 Jan 2027 00:00 WIB (= 31 Des 2026 17:00 UTC)
     target: Date.UTC(2026, 11, 31, 17, 0, 0),
     tahun: 2027,
-    // Pilihan radio bawaan di panel High Command. Tambah sendiri: ["Nama", "url stream mp3/aac"]
-    radio: [
-      ["Christmas Lounge", "https://ice1.somafm.com/christmas-128-mp3"],
-      ["Christmas Rocks", "https://ice1.somafm.com/xmasrocks-128-mp3"]
-    ]
+    // ===== MUSIK (ditanam, anggota tidak bisa mengubah) =====
+    // Ganti URL di bawah dengan link YouTube (video) atau link langsung file mp3/aac.
+    musikUrl: "", // contoh: "https://www.youtube.com/watch?v=XXXXXXXXXXX"
+    musikVolume: 50 // 0-100
   };
 
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -133,30 +132,29 @@
       if (document.hidden) cancelAnimationFrame(raf); else if (run) frame();
     });
 
-    /* ---------- musik bersama ----------
-       Setelan (URL, volume, on/off) disimpan di server lewat /api/musik.
-       Hanya High Command yang bisa mengubah; semua user ikut mendengar. */
+    /* ---------- musik latar ----------
+       URL & volume ditanam di CONFIG (tidak bisa diubah anggota).
+       Posisi lagu disimpan di perangkat, jadi refresh / pindah halaman
+       melanjutkan dari detik terakhir, bukan mengulang dari awal.
+       Kalau durasi habis, lagu otomatis mengulang dari awal. */
     var mu = el("div", "nt-mu");
     var note = '<svg viewBox="0 0 24 24"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3H9z"/></svg>';
-    mu.innerHTML = '<div class="nt-pn" id="nt-pn"><h4>Musik Server</h4>' +
-      '<div class="nt-msg" style="margin:0 0 8px">Berlaku untuk semua user yang sedang membuka website.</div>' +
-      '<input type="text" id="nt-url" placeholder="Link YouTube atau link stream radio (mp3/aac)">' +
-      '<select id="nt-sel"><option value="">Pilih radio bawaan...</option></select>' +
-      '<div class="nt-row" style="margin-bottom:8px"><span>Volume</span><input type="range" id="nt-vol" min="0" max="100"><b id="nt-vv" style="min-width:30px;text-align:right">50</b></div>' +
-      '<div class="nt-row"><button id="nt-save">Simpan &amp; Putar</button><button id="nt-off" style="background:#555">Matikan</button></div>' +
-      '<div class="nt-msg" id="nt-msg"></div>' +
-      '<div class="nt-row" style="margin-top:6px"><label style="font-size:12px"><input type="checkbox" id="nt-mute"> Bisukan di perangkat ini</label></div></div>' +
-      '<button class="nt-fab" id="nt-fab" aria-label="Musik">' + note + '</button>';
+    mu.innerHTML = '<button class="nt-fab" id="nt-fab" aria-label="Musik (ketuk untuk bisukan)">' + note + '</button>';
     document.body.appendChild(mu);
-    var $m = function (id) { return mu.querySelector("#nt-" + id); };
-    var pn = $m("pn"), fab = $m("fab"), msg = $m("msg"), sel = $m("sel"), isHC = false;
-    mu.style.display = "none"; // tampil setelah ada musik aktif atau user adalah HC
-    CONFIG.radio.forEach(function (r) { var o = el("option"); o.value = r[1]; o.textContent = r[0]; sel.appendChild(o); });
-    sel.onchange = function () { if (sel.value) $m("url").value = sel.value; };
-    $m("mute").checked = !!st.mute;
+    var fab = mu.querySelector("#nt-fab");
+    if (!CONFIG.musikUrl) { mu.style.display = "none"; return; }
 
-    var audio = new Audio(); audio.preload = "none";
-    var yt = null, cur = null, cfg = { on: false, url: "", volume: 50 }, unlocked = false, playing = false, editing = false;
+    var URLM = CONFIG.musikUrl, VOL = Math.max(0, Math.min(100, CONFIG.musikVolume));
+    var POSKEY = "natal-pos:" + URLM;
+    var audio = new Audio(); audio.preload = "auto"; audio.loop = true;
+    var yt = null, playing = false, started = false;
+
+    function savedPos() { try { return Math.max(0, parseFloat(localStorage.getItem(POSKEY)) || 0); } catch (e) { return 0; } }
+    function savePos(t) { try { if (t > 0 && isFinite(t)) localStorage.setItem(POSKEY, String(t)); } catch (e) {} }
+    function curTime() {
+      try { if (yt && yt.getCurrentTime) return yt.getCurrentTime(); } catch (e) {}
+      return audio.currentTime || 0;
+    }
 
     function ytId(u) {
       var m = u.match(/[?&]v=([\w-]{11})/) || u.match(/youtu\.be\/([\w-]{11})/) || u.match(/(?:embed|shorts|live)\/([\w-]{11})/);
@@ -169,91 +167,70 @@
       var old = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = function () { if (old) old(); cb(); };
     }
     function setVol() {
-      var v = cfg.volume, mute = !!st.mute;
-      audio.volume = v / 100; audio.muted = mute;
-      if (yt && yt.setVolume) try { yt.setVolume(v); mute ? yt.mute() : yt.unMute(); } catch (e) {}
+      var mute = !!st.mute;
+      audio.volume = VOL / 100; audio.muted = mute;
+      if (yt && yt.setVolume) try { yt.setVolume(VOL); mute ? yt.mute() : yt.unMute(); } catch (e) {}
     }
     function state(on) { playing = on; fab.classList.toggle("on", on && !st.mute); }
-    function halt() {
-      cur = null; audio.pause(); audio.removeAttribute("src");
-      if (yt) { try { yt.destroy(); } catch (e) {} yt = null; }
-      var h = document.getElementById("nt-yt"); if (h) h.innerHTML = "";
-      state(false);
-    }
+
     function start() {
-      if (!cfg.on || !cfg.url) return halt();
-      cur = cfg.url + "|" + cfg.updatedAt;
-      var id = ytId(cfg.url);
+      if (started) return; started = true;
+      var id = ytId(URLM), pos = savedPos();
       if (id.is) {
         if (!id.v && !id.l) return state(false);
-        audio.pause();
         loadYT(function () {
           var h = document.getElementById("nt-yt") || document.body.appendChild(el("div")); h.id = "nt-yt"; h.innerHTML = "<div id=nt-ytp></div>";
-          var pv = { autoplay: 1, playsinline: 1, controls: 0 };
+          var pv = { autoplay: 1, playsinline: 1, controls: 0, start: Math.floor(pos) };
           if (id.l) { pv.listType = "playlist"; pv.list = id.l; pv.loop = 1; }
           yt = new YT.Player("nt-ytp", {
             width: 200, height: 200, videoId: id.v || undefined, playerVars: pv,
             events: {
-              onReady: function (e) { setVol(); e.target.playVideo(); state(true); },
-              onStateChange: function (e) { if (e.data === 0 && !id.l) { e.target.seekTo(0); e.target.playVideo(); } },
-              onError: function () { state(false); if (isHC) msg.textContent = "Video ini tidak bisa diputar (embed dimatikan pemiliknya)."; }
+              onReady: function (e) { setVol(); e.target.playVideo(); },
+              onStateChange: function (e) {
+                if (e.data === 1) state(true);
+                else if (e.data === 2) state(false);
+                else if (e.data === 0 && !id.l) { e.target.seekTo(0); e.target.playVideo(); } // durasi habis -> ulang
+              },
+              onError: function () { state(false); }
             }
           });
         });
       } else {
-        if (yt) { try { yt.destroy(); } catch (e) {} yt = null; }
-        audio.src = cfg.url; setVol();
+        audio.src = URLM; setVol();
+        audio.addEventListener("loadedmetadata", function () {
+          if (pos > 0 && (!isFinite(audio.duration) || pos < audio.duration - 1)) { try { audio.currentTime = pos; } catch (e) {} }
+        }, { once: true });
         audio.play().then(function () { state(true); }).catch(function () { state(false); });
       }
     }
-    audio.onerror = function () { if (audio.src) { state(false); if (isHC) msg.textContent = "Stream tidak bisa dibuka."; } };
+    audio.onerror = function () { if (audio.src) state(false); };
 
-    function apply(c) {
-      if (!c) return;
-      var changed = c.url !== cfg.url || c.updatedAt !== cfg.updatedAt || c.on !== cfg.on;
-      cfg = c; setVol();
-      mu.style.display = (c.on || isHC) ? "" : "none";
-      if (!c.on) { if (cur) halt(); return; }
-      if (changed || !cur) { if (unlocked || !cur) start(); }
-    }
-    function poll() {
-      if (document.hidden || editing) return;
-      fetch("/api/musik", { credentials: "include", cache: "no-store" }).then(function (r) { return r.json(); }).then(apply).catch(function () {});
-    }
+    // simpan posisi tiap detik + saat meninggalkan halaman
+    setInterval(function () { if (playing) savePos(curTime()); }, 1000);
+    addEventListener("pagehide", function () { savePos(curTime()); });
+    document.addEventListener("visibilitychange", function () { if (document.hidden) savePos(curTime()); });
 
-    // browser memblokir suara sebelum ada interaksi: mulai pada klik/ketuk pertama
+    // browser memblokir suara sebelum ada interaksi: lanjutkan pada klik/ketuk pertama
+    function resume() {
+      if (!started) return start();
+      if (playing) return;
+      if (yt && yt.playVideo) { try { yt.playVideo(); } catch (e) {} }
+      else if (audio.src) audio.play().then(function () { state(true); }).catch(function () {});
+    }
     function unlock() {
-      unlocked = true;
       document.removeEventListener("pointerdown", unlock); document.removeEventListener("keydown", unlock);
-      if (cfg.on && !playing) start();
+      resume();
     }
     document.addEventListener("pointerdown", unlock); document.addEventListener("keydown", unlock);
 
+    // tombol musik: bisukan / hidupkan di perangkat sendiri
+    fab.style.opacity = st.mute ? ".55" : "1";
     fab.onclick = function () {
-      if (isHC) { pn.classList.toggle("open"); editing = pn.classList.contains("open"); if (editing) { $m("url").value = cfg.url || ""; $m("vol").value = cfg.volume; $m("vv").textContent = cfg.volume; } return; }
-      st.mute = !st.mute; save(); setVol(); state(playing);
+      st.mute = !st.mute; save(); setVol(); resume(); state(playing);
       fab.style.opacity = st.mute ? ".55" : "1";
     };
-    $m("mute").onchange = function () { st.mute = this.checked; save(); setVol(); state(playing); };
-    $m("vol").oninput = function () { $m("vv").textContent = this.value; };
 
-    function kirim(body, ok) {
-      msg.textContent = "Menyimpan...";
-      fetch("/api/musik", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Gagal menyimpan."); return d; }); })
-        .then(function (d) { unlocked = true; apply(d); msg.textContent = ok; })
-        .catch(function (e) { msg.textContent = e.message; });
-    }
-    $m("save").onclick = function () { kirim({ url: $m("url").value.trim(), volume: +$m("vol").value, on: true }, "Tersimpan. Semua user akan mendengar lagu ini."); };
-    $m("off").onclick = function () { kirim({ on: false, volume: +$m("vol").value }, "Musik dimatikan untuk semua user."); };
-
-    // cek apakah user ini High Command (warga / belum login = bukan)
-    fetch("/api/me", { credentials: "include" }).then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { var u = d && (d.user || d); isHC = !!(u && u.isHighCommand); if (!isHC) pn.remove(); mu.style.display = isHC ? "" : mu.style.display; })
-      .catch(function () { pn.remove(); })
-      .then(poll);
-    setInterval(poll, 20000);
-    document.addEventListener("visibilitychange", function () { if (!document.hidden) poll(); });
+    start(); // coba langsung; kalau diblokir browser, mulai di interaksi pertama
   }
   if (document.body) init(); else document.addEventListener("DOMContentLoaded", init);
 })();
