@@ -7,9 +7,7 @@
     // Target tahun baru: 1 Jan 2027 00:00 WIB (= 31 Des 2026 17:00 UTC)
     target: Date.UTC(2026, 11, 31, 17, 0, 0),
     tahun: 2027,
-    // Lagu bawaan YouTube (isi link video/playlist kalau mau; kosong = pakai radio)
-    youtubeDefault: "",
-    // Daftar radio/stream. Tambah sendiri: ["Nama", "url stream mp3/aac"]
+    // Pilihan radio bawaan di panel High Command. Tambah sendiri: ["Nama", "url stream mp3/aac"]
     radio: [
       ["Christmas Lounge", "https://ice1.somafm.com/christmas-128-mp3"],
       ["Christmas Rocks", "https://ice1.somafm.com/xmasrocks-128-mp3"]
@@ -135,93 +133,127 @@
       if (document.hidden) cancelAnimationFrame(raf); else if (run) frame();
     });
 
-    /* ---------- pemutar lagu ---------- */
+    /* ---------- musik bersama ----------
+       Setelan (URL, volume, on/off) disimpan di server lewat /api/musik.
+       Hanya High Command yang bisa mengubah; semua user ikut mendengar. */
     var mu = el("div", "nt-mu");
     var note = '<svg viewBox="0 0 24 24"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3H9z"/></svg>';
-    mu.innerHTML = '<div class="nt-pn" id="nt-pn"><h4>Lagu Natal</h4>' +
-      '<div class="nt-tabs"><button data-m="yt">YouTube</button><button data-m="fm">Radio / FM</button></div>' +
-      '<div id="nt-yb"><input type="text" id="nt-url" placeholder="Tempel link YouTube..."></div>' +
-      '<div id="nt-fb"><select id="nt-sel"></select><input type="text" id="nt-cu" placeholder="Atau link stream radio sendiri (mp3/aac)"></div>' +
-      '<div class="nt-row"><button id="nt-go">Putar</button><input type="range" id="nt-vol" min="0" max="100"></div>' +
-      '<div class="nt-msg" id="nt-msg"></div></div><button class="nt-fab" id="nt-fab" aria-label="Pemutar lagu">' + note + '</button>';
+    mu.innerHTML = '<div class="nt-pn" id="nt-pn"><h4>Musik Server</h4>' +
+      '<div class="nt-msg" style="margin:0 0 8px">Berlaku untuk semua user yang sedang membuka website.</div>' +
+      '<input type="text" id="nt-url" placeholder="Link YouTube atau link stream radio (mp3/aac)">' +
+      '<select id="nt-sel"><option value="">Pilih radio bawaan...</option></select>' +
+      '<div class="nt-row" style="margin-bottom:8px"><span>Volume</span><input type="range" id="nt-vol" min="0" max="100"><b id="nt-vv" style="min-width:30px;text-align:right">50</b></div>' +
+      '<div class="nt-row"><button id="nt-save">Simpan &amp; Putar</button><button id="nt-off" style="background:#555">Matikan</button></div>' +
+      '<div class="nt-msg" id="nt-msg"></div>' +
+      '<div class="nt-row" style="margin-top:6px"><label style="font-size:12px"><input type="checkbox" id="nt-mute"> Bisukan di perangkat ini</label></div></div>' +
+      '<button class="nt-fab" id="nt-fab" aria-label="Musik">' + note + '</button>';
     document.body.appendChild(mu);
     var $m = function (id) { return mu.querySelector("#nt-" + id); };
-    var pn = $m("pn"), fab = $m("fab"), msg = $m("msg"), sel = $m("sel");
-    CONFIG.radio.forEach(function (r, i) { var o = el("option"); o.value = r[1]; o.textContent = r[0]; sel.appendChild(o); });
-    var mode = st.mode || (CONFIG.youtubeDefault ? "yt" : "fm");
-    var vol = st.vol == null ? 50 : st.vol; $m("vol").value = vol;
-    $m("url").value = st.yt || CONFIG.youtubeDefault || "";
-    if (st.fm) { var has = [].some.call(sel.options, function (o) { return o.value === st.fm; }); if (has) sel.value = st.fm; else $m("cu").value = st.fm; }
-    function setMode(m) {
-      mode = m; st.mode = m; save();
-      $m("yb").style.display = m === "yt" ? "" : "none"; $m("fb").style.display = m === "fm" ? "" : "none";
-      [].forEach.call(mu.querySelectorAll(".nt-tabs button"), function (b) { b.classList.toggle("a", b.dataset.m === m); });
-    }
-    setMode(mode);
-    [].forEach.call(mu.querySelectorAll(".nt-tabs button"), function (b) { b.onclick = function () { setMode(b.dataset.m); }; });
-    fab.onclick = function () { pn.classList.toggle("open"); };
+    var pn = $m("pn"), fab = $m("fab"), msg = $m("msg"), sel = $m("sel"), isHC = false;
+    mu.style.display = "none"; // tampil setelah ada musik aktif atau user adalah HC
+    CONFIG.radio.forEach(function (r) { var o = el("option"); o.value = r[1]; o.textContent = r[0]; sel.appendChild(o); });
+    sel.onchange = function () { if (sel.value) $m("url").value = sel.value; };
+    $m("mute").checked = !!st.mute;
 
-    var audio = new Audio(); audio.preload = "none"; audio.volume = vol / 100;
-    var yt = null, ytReady = false, ytPending = null, playing = false;
-    function ui(on, text) { playing = on; fab.classList.toggle("on", on); $m("go").textContent = on ? "Berhenti" : "Putar"; if (text != null) msg.textContent = text; st.on = on; save(); }
+    var audio = new Audio(); audio.preload = "none";
+    var yt = null, cur = null, cfg = { on: false, url: "", volume: 50 }, unlocked = false, playing = false, editing = false;
+
     function ytId(u) {
       var m = u.match(/[?&]v=([\w-]{11})/) || u.match(/youtu\.be\/([\w-]{11})/) || u.match(/(?:embed|shorts|live)\/([\w-]{11})/);
       var l = u.match(/[?&]list=([\w-]+)/);
-      return { v: m && m[1], l: l && l[1] };
+      return { v: m && m[1], l: l && l[1], is: /youtu\.?be/.test(u) };
     }
     function loadYT(cb) {
       if (window.YT && YT.Player) return cb();
-      var t = document.createElement("script"); t.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(t);
+      if (!document.getElementById("nt-ytapi")) { var t = document.createElement("script"); t.id = "nt-ytapi"; t.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(t); }
       var old = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = function () { if (old) old(); cb(); };
     }
-    function playYT(url) {
-      var id = ytId(url);
-      if (!id.v && !id.l) { msg.textContent = "Link YouTube tidak valid."; return false; }
-      st.yt = url; save(); audio.pause();
-      msg.textContent = "Memuat...";
-      loadYT(function () {
-        var holder = document.getElementById("nt-yt") || document.body.appendChild(el("div")); holder.id = "nt-yt";
-        if (yt) { try { yt.destroy(); } catch (e) {} holder.innerHTML = "<div id=nt-ytp></div>"; } else holder.innerHTML = "<div id=nt-ytp></div>";
-        var pv = { autoplay: 1, playsinline: 1 };
-        if (id.l) { pv.listType = "playlist"; pv.list = id.l; pv.loop = 1; }
-        yt = new YT.Player("nt-ytp", {
-          width: 200, height: 200, videoId: id.v || undefined, playerVars: pv,
-          events: {
-            onReady: function (e) { e.target.setVolume(vol); e.target.playVideo(); ui(true, "Memutar dari YouTube"); },
-            onStateChange: function (e) { if (e.data === 0 && !id.l) { e.target.seekTo(0); e.target.playVideo(); } },
-            onError: function () { ui(false, "Video ini tidak bisa diputar di sini. Coba link lain."); }
-          }
+    function setVol() {
+      var v = cfg.volume, mute = !!st.mute;
+      audio.volume = v / 100; audio.muted = mute;
+      if (yt && yt.setVolume) try { yt.setVolume(v); mute ? yt.mute() : yt.unMute(); } catch (e) {}
+    }
+    function state(on) { playing = on; fab.classList.toggle("on", on && !st.mute); }
+    function halt() {
+      cur = null; audio.pause(); audio.removeAttribute("src");
+      if (yt) { try { yt.destroy(); } catch (e) {} yt = null; }
+      var h = document.getElementById("nt-yt"); if (h) h.innerHTML = "";
+      state(false);
+    }
+    function start() {
+      if (!cfg.on || !cfg.url) return halt();
+      cur = cfg.url + "|" + cfg.updatedAt;
+      var id = ytId(cfg.url);
+      if (id.is) {
+        if (!id.v && !id.l) return state(false);
+        audio.pause();
+        loadYT(function () {
+          var h = document.getElementById("nt-yt") || document.body.appendChild(el("div")); h.id = "nt-yt"; h.innerHTML = "<div id=nt-ytp></div>";
+          var pv = { autoplay: 1, playsinline: 1, controls: 0 };
+          if (id.l) { pv.listType = "playlist"; pv.list = id.l; pv.loop = 1; }
+          yt = new YT.Player("nt-ytp", {
+            width: 200, height: 200, videoId: id.v || undefined, playerVars: pv,
+            events: {
+              onReady: function (e) { setVol(); e.target.playVideo(); state(true); },
+              onStateChange: function (e) { if (e.data === 0 && !id.l) { e.target.seekTo(0); e.target.playVideo(); } },
+              onError: function () { state(false); if (isHC) msg.textContent = "Video ini tidak bisa diputar (embed dimatikan pemiliknya)."; }
+            }
+          });
         });
-      });
-      return true;
+      } else {
+        if (yt) { try { yt.destroy(); } catch (e) {} yt = null; }
+        audio.src = cfg.url; setVol();
+        audio.play().then(function () { state(true); }).catch(function () { state(false); });
+      }
     }
-    function playFM(url) {
-      if (!url) { msg.textContent = "Pilih radio dulu."; return false; }
-      st.fm = url; save();
-      if (yt && yt.pauseVideo) try { yt.pauseVideo(); } catch (e) {}
-      audio.src = url; msg.textContent = "Menyambung...";
-      audio.play().then(function () { ui(true, "Memutar radio"); }).catch(function () { ui(false, "Gagal memutar. Klik Putar lagi atau coba radio lain."); });
-      return true;
-    }
-    function stop() {
-      audio.pause(); if (yt && yt.pauseVideo) try { yt.pauseVideo(); } catch (e) {} ui(false, "");
-    }
-    audio.onerror = function () { if (audio.src) ui(false, "Stream radio tidak bisa dibuka."); };
-    $m("go").onclick = function () {
-      if (playing) return stop();
-      if (mode === "yt") playYT($m("url").value.trim()); else playFM($m("cu").value.trim() || sel.value);
-    };
-    $m("vol").oninput = function () { vol = +this.value; st.vol = vol; save(); audio.volume = vol / 100; if (yt && yt.setVolume) try { yt.setVolume(vol); } catch (e) {} };
+    audio.onerror = function () { if (audio.src) { state(false); if (isHC) msg.textContent = "Stream tidak bisa dibuka."; } };
 
-    // lanjut otomatis di halaman berikutnya (browser butuh 1 interaksi dulu)
-    if (st.on) {
-      var resume = function () {
-        document.removeEventListener("pointerdown", resume); document.removeEventListener("keydown", resume); if (playing) return;
-        if (mode === "yt" && st.yt) playYT(st.yt); else if (mode === "fm" && st.fm) playFM(st.fm);
-      };
-      if (mode === "fm" && st.fm) { audio.src = st.fm; audio.play().then(function () { ui(true, "Memutar radio"); }).catch(function () {}); }
-      document.addEventListener("pointerdown", resume, { once: true }); document.addEventListener("keydown", resume, { once: true });
+    function apply(c) {
+      if (!c) return;
+      var changed = c.url !== cfg.url || c.updatedAt !== cfg.updatedAt || c.on !== cfg.on;
+      cfg = c; setVol();
+      mu.style.display = (c.on || isHC) ? "" : "none";
+      if (!c.on) { if (cur) halt(); return; }
+      if (changed || !cur) { if (unlocked || !cur) start(); }
     }
+    function poll() {
+      if (document.hidden || editing) return;
+      fetch("/api/musik", { credentials: "include", cache: "no-store" }).then(function (r) { return r.json(); }).then(apply).catch(function () {});
+    }
+
+    // browser memblokir suara sebelum ada interaksi: mulai pada klik/ketuk pertama
+    function unlock() {
+      unlocked = true;
+      document.removeEventListener("pointerdown", unlock); document.removeEventListener("keydown", unlock);
+      if (cfg.on && !playing) start();
+    }
+    document.addEventListener("pointerdown", unlock); document.addEventListener("keydown", unlock);
+
+    fab.onclick = function () {
+      if (isHC) { pn.classList.toggle("open"); editing = pn.classList.contains("open"); if (editing) { $m("url").value = cfg.url || ""; $m("vol").value = cfg.volume; $m("vv").textContent = cfg.volume; } return; }
+      st.mute = !st.mute; save(); setVol(); state(playing);
+      fab.style.opacity = st.mute ? ".55" : "1";
+    };
+    $m("mute").onchange = function () { st.mute = this.checked; save(); setVol(); state(playing); };
+    $m("vol").oninput = function () { $m("vv").textContent = this.value; };
+
+    function kirim(body, ok) {
+      msg.textContent = "Menyimpan...";
+      fetch("/api/musik", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || "Gagal menyimpan."); return d; }); })
+        .then(function (d) { unlocked = true; apply(d); msg.textContent = ok; })
+        .catch(function (e) { msg.textContent = e.message; });
+    }
+    $m("save").onclick = function () { kirim({ url: $m("url").value.trim(), volume: +$m("vol").value, on: true }, "Tersimpan. Semua user akan mendengar lagu ini."); };
+    $m("off").onclick = function () { kirim({ on: false, volume: +$m("vol").value }, "Musik dimatikan untuk semua user."); };
+
+    // cek apakah user ini High Command (warga / belum login = bukan)
+    fetch("/api/me", { credentials: "include" }).then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { var u = d && (d.user || d); isHC = !!(u && u.isHighCommand); if (!isHC) pn.remove(); mu.style.display = isHC ? "" : mu.style.display; })
+      .catch(function () { pn.remove(); })
+      .then(poll);
+    setInterval(poll, 20000);
+    document.addEventListener("visibilitychange", function () { if (!document.hidden) poll(); });
   }
   if (document.body) init(); else document.addEventListener("DOMContentLoaded", init);
 })();
