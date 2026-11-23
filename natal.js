@@ -9,7 +9,7 @@
     tahun: 2027,
     // ===== MUSIK (ditanam, anggota tidak bisa mengubah) =====
     // Ganti URL di bawah dengan link YouTube (video) atau link langsung file mp3/aac.
-    musikUrl: "https://www.youtube.com/watch?v=fsfp077xTTU", // contoh: "https://www.youtube.com/watch?v=XXXXXXXXXXX"
+    musikUrl: "", // contoh: "https://www.youtube.com/watch?v=XXXXXXXXXXX"
     musikVolume: 50 // 0-100
   };
 
@@ -137,12 +137,7 @@
        Posisi lagu disimpan di perangkat, jadi refresh / pindah halaman
        melanjutkan dari detik terakhir, bukan mengulang dari awal.
        Kalau durasi habis, lagu otomatis mengulang dari awal. */
-    var mu = el("div", "nt-mu");
-    var note = '<svg viewBox="0 0 24 24"><path d="M9 3v11.3A3.5 3.5 0 1 0 11 17.5V8h7V3H9z"/></svg>';
-    mu.innerHTML = '<button class="nt-fab" id="nt-fab" aria-label="Musik (ketuk untuk bisukan)">' + note + '</button>';
-    document.body.appendChild(mu);
-    var fab = mu.querySelector("#nt-fab");
-    if (!CONFIG.musikUrl) { mu.style.display = "none"; return; }
+    if (!CONFIG.musikUrl) return;
 
     var URLM = CONFIG.musikUrl, VOL = Math.max(0, Math.min(100, CONFIG.musikVolume));
     var POSKEY = "natal-pos:" + URLM;
@@ -171,7 +166,7 @@
       audio.volume = VOL / 100; audio.muted = mute;
       if (yt && yt.setVolume) try { yt.setVolume(VOL); mute ? yt.mute() : yt.unMute(); } catch (e) {}
     }
-    function state(on) { playing = on; fab.classList.toggle("on", on && !st.mute); }
+    function state(on) { playing = on; }
 
     function start() {
       if (started) return; started = true;
@@ -222,13 +217,6 @@
       resume();
     }
     document.addEventListener("pointerdown", unlock); document.addEventListener("keydown", unlock);
-
-    // tombol musik: bisukan / hidupkan di perangkat sendiri
-    fab.style.opacity = st.mute ? ".55" : "1";
-    fab.onclick = function () {
-      st.mute = !st.mute; save(); setVol(); resume(); state(playing);
-      fab.style.opacity = st.mute ? ".55" : "1";
-    };
 
     start(); // coba langsung; kalau diblokir browser, mulai di interaksi pertama
   }

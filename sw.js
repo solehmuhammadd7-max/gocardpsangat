@@ -1,4 +1,4 @@
-const CACHE_NAME = "nexotis-shell-v6";
+const CACHE_NAME = "nexotis-shell-v7";
 const SHELL_FILES = [
   "./index.html",
   "./register.html",
@@ -7,7 +7,7 @@ const SHELL_FILES = [
   "./warga.html",
   "./profil.html",
   "./style.css",
-  "./natal.js",
+  "./natal.js?v=2",
   "./app.js",
   "./manifest.json",
 ];
