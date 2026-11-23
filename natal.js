@@ -9,7 +9,7 @@
     tahun: 2027,
     // ===== MUSIK (ditanam, anggota tidak bisa mengubah) =====
     // Ganti URL di bawah dengan link YouTube (video) atau link langsung file mp3/aac.
-    musikUrl: "", // contoh: "https://www.youtube.com/watch?v=XXXXXXXXXXX"
+    musikUrl: "https://youtu.be/mzAwKKRGXSk?si=8XbAM9r7x6EFEWFJ", // contoh: "https://www.youtube.com/watch?v=XXXXXXXXXXX"
     musikVolume: 50 // 0-100
   };
 
